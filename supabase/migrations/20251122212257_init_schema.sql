@@ -4,16 +4,38 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================
--- 1. ENUM Types
+-- 1. Lookup tables
 -- ============================================
-CREATE TYPE contact_role AS ENUM ('admin', 'viewer');
-CREATE TYPE relationship_category AS ENUM ('Prospect','Channel Partner','Influencer');
+CREATE TABLE IF NOT EXISTS profile_roles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  description text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO profile_roles (name, description)
+VALUES 
+  ('admin', 'Full access to the account and upload features'),
+  ('viewer', 'Can view and select curated items (CEO / viewer role)')
+ON CONFLICT (name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS relationship_categories (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  description text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO relationship_categories (name, description)
+VALUES
+ ('Prospect', 'Potential future customer'),
+ ('Channel Partner', 'Partner for distribution or sales'),
+ ('Influencer', 'Person or company with influence over decisions')
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================
--- 2. Core Tables
+-- 2. Industries
 -- ============================================
-
--- Industries
 CREATE TABLE IF NOT EXISTS industries (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL UNIQUE,
@@ -21,17 +43,21 @@ CREATE TABLE IF NOT EXISTS industries (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Categories
-CREATE TABLE IF NOT EXISTS categories (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL UNIQUE,
-  description text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+INSERT INTO industries (name, description)
+VALUES
+  ('Technology', 'Software, platforms, dev tools'),
+  ('Finance', 'Banks, payment companies, fintech'),
+  ('Healthcare', 'Hospitals, medtech, pharmaceuticals'),
+  ('Retail', 'Ecommerce and physical retail'),
+  ('Media', 'Publishers, streaming, content companies')
+ON CONFLICT (name) DO NOTHING;
 
--- Companies (soft delete)
+-- ============================================
+-- 3. Companies (without added_by_profile_id FK yet)
+-- ============================================
 CREATE TABLE IF NOT EXISTS companies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  added_by_profile_id uuid, -- FK will be added later
   name text NOT NULL,
   legal_name text,
   slug text UNIQUE,
@@ -39,7 +65,6 @@ CREATE TABLE IF NOT EXISTS companies (
   logo_url text,
   description text,
   industry_id uuid REFERENCES industries(id) ON DELETE SET NULL,
-  category_id uuid REFERENCES categories(id) ON DELETE SET NULL,
   meta jsonb DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
@@ -49,34 +74,57 @@ CREATE TABLE IF NOT EXISTS companies (
 CREATE UNIQUE INDEX IF NOT EXISTS companies_name_unique_idx
   ON companies (lower(name));
 
--- Contacts (replaces profiles)
-CREATE TABLE IF NOT EXISTS contacts (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  auth_uid text UNIQUE,
+-- ============================================
+-- 4. Profiles
+-- ============================================
+CREATE TABLE IF NOT EXISTS profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   company_id uuid REFERENCES companies(id) ON DELETE SET NULL,
-  email text NOT NULL,
-  name text,
-  title text,
-  role contact_role NOT NULL DEFAULT 'viewer',
-  phone text,
-  avatar_url text,
-  meta jsonb DEFAULT '{}'::jsonb,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  full_name text,
+  role_id uuid REFERENCES profile_roles(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS contacts_email_idx
-  ON contacts (lower(email));
+CREATE INDEX IF NOT EXISTS profiles_company_idx ON profiles (company_id);
 
 -- ============================================
--- 3. Target Companies Mapping (A → B)
+-- 5. Add FK for companies.added_by_profile_id now that profiles exist
+-- ============================================
+ALTER TABLE companies
+ADD CONSTRAINT companies_added_by_profile_fk
+FOREIGN KEY (added_by_profile_id) REFERENCES profiles(id) ON DELETE SET NULL;
+
+-- ============================================
+-- 6. Contacts
+-- ============================================
+CREATE TABLE IF NOT EXISTS contacts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id uuid REFERENCES companies(id) ON DELETE SET NULL,
+  email text,
+  name text,
+  title text,
+  phone text,
+  avatar_url text,
+  added_by_profile_id uuid REFERENCES profiles(id) ON DELETE SET NULL,
+  meta jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS contacts_email_idx ON contacts (lower(email));
+CREATE INDEX IF NOT EXISTS contacts_company_idx ON contacts (company_id);
+
+-- ============================================
+-- 7. Target Companies
 -- ============================================
 CREATE TABLE IF NOT EXISTS target_companies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   client_company_id uuid NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   target_company_id uuid NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
-  added_by_contact_id uuid REFERENCES contacts(id) ON DELETE SET NULL,
-  relationship_category relationship_category NOT NULL DEFAULT 'Prospect',
+  added_by_profile_id uuid REFERENCES profiles(id) ON DELETE SET NULL,
+  relationship_category uuid NOT NULL REFERENCES relationship_categories(id),
   why text,
   note text,
   tags text[],
@@ -89,18 +137,12 @@ CREATE TABLE IF NOT EXISTS target_companies (
 CREATE UNIQUE INDEX IF NOT EXISTS target_companies_unique_idx
   ON target_companies (client_company_id, target_company_id);
 
-CREATE INDEX IF NOT EXISTS target_companies_client_idx
-  ON target_companies (client_company_id);
-
-CREATE INDEX IF NOT EXISTS target_companies_target_idx
-  ON target_companies (target_company_id);
-
 -- ============================================
--- 4. Shareable Links
+-- 8. Shareable Links
 -- ============================================
 CREATE TABLE IF NOT EXISTS share_links (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  contact_id uuid REFERENCES contacts(id) ON DELETE SET NULL,
+  profile_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   company_id uuid REFERENCES companies(id) ON DELETE CASCADE,
   link_token text NOT NULL UNIQUE,
   permissions jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -109,19 +151,16 @@ CREATE TABLE IF NOT EXISTS share_links (
   max_uses int,
   uses int DEFAULT 0,
   notes text,
+  revoked boolean DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  revoked boolean DEFAULT false
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS share_links_company_idx
-  ON share_links (company_id);
-
-CREATE INDEX IF NOT EXISTS share_links_expires_idx
-  ON share_links (expires_at);
+CREATE INDEX IF NOT EXISTS share_links_company_idx ON share_links (company_id);
+CREATE INDEX IF NOT EXISTS share_links_expires_idx ON share_links (expires_at);
 
 -- ============================================
--- 5. Share Link Logs
+-- 9. Share Link Logs
 -- ============================================
 CREATE TABLE IF NOT EXISTS share_link_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -132,18 +171,14 @@ CREATE TABLE IF NOT EXISTS share_link_logs (
   event text NOT NULL DEFAULT 'open'
 );
 
-CREATE INDEX IF NOT EXISTS share_link_logs_by_link_idx
-  ON share_link_logs (share_link_id);
-
-CREATE INDEX IF NOT EXISTS share_link_logs_timestamp_idx
-  ON share_link_logs (timestamp);
+CREATE INDEX IF NOT EXISTS share_link_logs_by_link_idx ON share_link_logs (share_link_id);
 
 -- ============================================
--- 6. Activity Logs
+-- 10. Activity Logs
 -- ============================================
 CREATE TABLE IF NOT EXISTS activity_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  actor_contact_id uuid REFERENCES contacts(id) ON DELETE SET NULL,
+  actor_profile_id uuid REFERENCES profiles(id) ON DELETE SET NULL,
   action text NOT NULL,
   target_type text,
   target_id uuid,
@@ -151,14 +186,10 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS activity_logs_actor_idx
-  ON activity_logs (actor_contact_id);
-
-CREATE INDEX IF NOT EXISTS activity_logs_action_idx
-  ON activity_logs (action);
+CREATE INDEX IF NOT EXISTS activity_logs_actor_idx ON activity_logs (actor_profile_id);
 
 -- ============================================
--- 7. Triggers
+-- 11. Triggers
 -- ============================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -169,43 +200,25 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_companies_updated_at
-BEFORE UPDATE ON companies
-FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+  BEFORE UPDATE ON companies
+  FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 CREATE TRIGGER trg_contacts_updated_at
-BEFORE UPDATE ON contacts
-FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+  BEFORE UPDATE ON contacts
+  FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 CREATE TRIGGER trg_target_companies_updated_at
-BEFORE UPDATE ON target_companies
-FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+  BEFORE UPDATE ON target_companies
+  FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 CREATE TRIGGER trg_share_links_updated_at
-BEFORE UPDATE ON share_links
-FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+  BEFORE UPDATE ON share_links
+  FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 -- ============================================
--- 8. Helper Functions
--- ============================================
-CREATE OR REPLACE FUNCTION share_link_is_active(p_share_link_id uuid)
-RETURNS boolean AS $$
-DECLARE
-  l share_links%ROWTYPE;
-BEGIN
-  SELECT * INTO l FROM share_links WHERE id = p_share_link_id;
-  IF NOT FOUND THEN RETURN false; END IF;
-  IF l.revoked THEN RETURN false; END IF;
-  IF l.expires_at IS NOT NULL AND l.expires_at < now() THEN RETURN false; END IF;
-  IF l.max_uses IS NOT NULL AND l.uses >= l.max_uses THEN RETURN false; END IF;
-  RETURN true;
-END;
-$$ LANGUAGE plpgsql STABLE;
-
--- ============================================
--- 9. Extra Performance Indexes
+-- 12. Extra Indexes
 -- ============================================
 CREATE INDEX IF NOT EXISTS companies_deleted_at_idx ON companies (deleted_at);
-CREATE INDEX IF NOT EXISTS contacts_company_idx ON contacts (company_id);
 CREATE INDEX IF NOT EXISTS target_companies_client_target_idx ON target_companies (client_company_id, target_company_id);
 
 -- ============================================
