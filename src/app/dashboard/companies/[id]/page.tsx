@@ -16,8 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ArrowLeft, Building2, Target } from 'lucide-react'
+import { ArrowLeft, Building2, Target, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { CompanyForm } from '@/components/dashboard/company-form'
+import { DeleteCompanyDialog } from '@/components/dashboard/delete-company-dialog'
+import { getIndustries } from '@/lib/actions/company'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -39,10 +42,13 @@ export default async function CompanyDetailPage({ params }: PageProps) {
     .select(`
       id,
       name,
+      legal_name,
       logo_url,
       website,
       description,
+      industry_id,
       industries (
+        id,
         name
       )
     `)
@@ -53,6 +59,9 @@ export default async function CompanyDetailPage({ params }: PageProps) {
   if (companyError || !company) {
     notFound()
   }
+
+  // Fetch industries for the edit form
+  const industries = await getIndustries()
 
   // Fetch target companies for this company (as client_company)
   const { data: targetCompanies } = await supabase
@@ -91,24 +100,52 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         </div>
 
         {/* Company Header */}
-        <div className="flex items-center gap-4">
-          {company.logo_url ? (
-            <img
-              src={company.logo_url}
-              alt={company.name}
-              className="h-16 w-16 rounded-lg object-cover"
-            />
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
-              <Building2 className="h-8 w-8 text-muted-foreground" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {company.logo_url ? (
+              <img
+                src={company.logo_url}
+                alt={company.name}
+                className="h-16 w-16 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
+                <Building2 className="h-8 w-8 text-muted-foreground" />
+              </div>
+            )}
+            <div>
+              <h1 className="text-2xl font-bold">{company.name}</h1>
+              <p className="text-muted-foreground">
+                {/* @ts-expect-error - Supabase returns single object for foreign key relation */}
+                {company.industries?.name || 'No industry'}
+              </p>
             </div>
-          )}
-          <div>
-            <h1 className="text-2xl font-bold">{company.name}</h1>
-            <p className="text-muted-foreground">
-              {/* @ts-expect-error - Supabase returns single object for foreign key relation */}
-              {company.industries?.name || 'No industry'}
-            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <CompanyForm
+              mode="edit"
+              industries={industries}
+              initialData={{
+                id: company.id,
+                name: company.name,
+                legal_name: company.legal_name,
+                website: company.website,
+                logo_url: company.logo_url,
+                description: company.description,
+                industry_id: company.industry_id,
+              }}
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              }
+            />
+            <DeleteCompanyDialog
+              companyId={company.id}
+              companyName={company.name}
+              redirectOnDelete
+            />
           </div>
         </div>
 

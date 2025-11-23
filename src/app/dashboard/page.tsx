@@ -19,7 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Building2, Globe, ChevronRight } from "lucide-react";
+import { Building2, Globe, ChevronRight, Plus } from "lucide-react";
+import { CompanyForm } from "@/components/dashboard/company-form";
+import { getIndustries } from "@/lib/actions/company";
+import { Button } from "@/components/ui/button";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -50,6 +53,9 @@ export default async function DashboardPage() {
     .is("deleted_at", null)
     .order("name");
 
+  // Fetch industries for the form
+  const industries = await getIndustries();
+
   return (
     <div className='min-h-screen p-6'>
       <div className='mx-auto max-w-6xl space-y-6'>
@@ -62,14 +68,26 @@ export default async function DashboardPage() {
 
         {/* Companies Table */}
         <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <Building2 className='h-5 w-5' />
-              Companies
-            </CardTitle>
-            <CardDescription>
-              Click on a company to view its target companies
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className='flex items-center gap-2'>
+                <Building2 className='h-5 w-5' />
+                Companies
+              </CardTitle>
+              <CardDescription>
+                Click on a company to view its target companies
+              </CardDescription>
+            </div>
+            <CompanyForm
+              mode="create"
+              industries={industries}
+              trigger={
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Company
+                </Button>
+              }
+            />
           </CardHeader>
           <CardContent>
             {companies && companies.length > 0 ? (
