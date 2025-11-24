@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Building2, Globe, ChevronRight, Plus } from "lucide-react";
 import { CompanyForm } from "@/components/dashboard/company-form";
-import { getIndustries } from "@/lib/actions/company";
+import { getCompanies, getIndustries } from "@/lib/actions/company";
 import { Button } from "@/components/ui/button";
 
 export default async function DashboardPage() {
@@ -35,26 +35,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Fetch companies with their industry
-  const { data: companies } = await supabase
-    .from("companies")
-    .select(
-      `
-      id,
-      name,
-      logo_url,
-      website,
-      description,
-      industries (
-        name
-      )
-    `
-    )
-    .is("deleted_at", null)
-    .order("name");
-
-  // Fetch industries for the form
-  const industries = await getIndustries();
+  // Fetch companies and industries
+  const [companies, industries] = await Promise.all([
+    getCompanies(),
+    getIndustries(),
+  ]);
 
   return (
     <div className='min-h-screen p-6'>

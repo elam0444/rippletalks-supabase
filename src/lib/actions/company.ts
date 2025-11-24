@@ -8,8 +8,8 @@ import { z } from "zod"
 const companySchema = z.object({
   name: z.string().min(1, "Company name is required").max(255),
   legal_name: z.string().max(255).optional().nullable(),
-  website: z.string().url("Invalid URL").optional().nullable().or(z.literal("")),
-  logo_url: z.string().url("Invalid URL").optional().nullable().or(z.literal("")),
+  website: z.url("Invalid URL").optional().nullable().or(z.literal("")),
+  logo_url: z.url("Invalid URL").optional().nullable().or(z.literal("")),
   description: z.string().max(1000).optional().nullable(),
   industry_id: z.string().uuid().optional().nullable(),
 })
@@ -139,6 +139,32 @@ export async function deleteCompany(id: string): Promise<ActionResult> {
 
   revalidatePath("/dashboard")
   return { success: true }
+}
+
+// Fetch all companies
+export async function getCompanies() {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("companies")
+    .select(`
+      id,
+      name,
+      logo_url,
+      website,
+      description,
+      industries (
+        name
+      )
+    `)
+    .is("deleted_at", null)
+    .order("name")
+
+  if (error) {
+    return []
+  }
+
+  return data
 }
 
 // Fetch industries for the dropdown
