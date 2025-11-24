@@ -14,6 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +45,8 @@ import {
 } from "@/components/ui/dialog";
 import { addTargetCompany } from "@/lib/actions/target-company";
 import { toast } from "sonner";
-import { Loader2, Plus, Building2 } from "lucide-react";
+import { Loader2, Plus, Building2, Check, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   target_company_id: z.string().uuid("Please select a company"),
@@ -65,6 +80,7 @@ export function AddTargetCompanyForm({
   categories,
 }: AddTargetCompanyFormProps) {
   const [open, setOpen] = useState(false);
+  const [companyPopoverOpen, setCompanyPopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
@@ -120,42 +136,86 @@ export function AddTargetCompanyForm({
               control={form.control}
               name='target_company_id'
               render={({ field }) => (
-                <FormItem>
+                <FormItem className='flex flex-col'>
                   <FormLabel>Target Company *</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                  <Popover
+                    open={companyPopoverOpen}
+                    onOpenChange={setCompanyPopoverOpen}
+                    modal={false}
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder='Select a company' />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {availableCompanies.length > 0 ? (
-                        availableCompanies.map((company) => (
-                          <SelectItem key={company.id} value={company.id}>
-                            <div className='flex items-center gap-2'>
-                              {company.logo_url ? (
-                                <Image
-                                  src={company.logo_url}
-                                  alt={company.name}
-                                  className='h-5 w-5 rounded object-cover'
-                                />
-                              ) : (
-                                <Building2 className='h-5 w-5 text-muted-foreground' />
-                              )}
-                              {company.name}
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className='px-2 py-4 text-center text-sm text-muted-foreground'>
-                          No available companies to target
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant='outline'
+                          role='combobox'
+                          aria-expanded={companyPopoverOpen}
+                          className='w-full justify-between border-input bg-background px-3 font-normal outline-offset-0 outline-none hover:bg-background focus-visible:outline-[3px]'
+                        >
+                          <span
+                            className={cn(
+                              "truncate",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value
+                              ? availableCompanies.find(
+                                  (company) => company.id === field.value
+                                )?.name
+                              : "Select a company"}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className='shrink-0 text-muted-foreground/80'
+                            aria-hidden='true'
+                          />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className='w-full min-w-(--radix-popper-anchor-width) border-input p-0'
+                      align='start'
+                    >
+                      <Command>
+                        <CommandInput placeholder='Search companies...' />
+                        <CommandList className='max-h-[275px] overflow-y-auto'>
+                          <CommandEmpty>No company found.</CommandEmpty>
+                          <CommandGroup>
+                            {availableCompanies.map((company) => (
+                              <CommandItem
+                                value={company.name}
+                                key={company.id}
+                                onSelect={() => {
+                                  form.setValue(
+                                    "target_company_id",
+                                    company.id
+                                  );
+                                  setCompanyPopoverOpen(false);
+                                }}
+                              >
+                                <div className='flex items-center gap-2'>
+                                  {company.logo_url ? (
+                                    <Image
+                                      src={company.logo_url}
+                                      alt={company.name}
+                                      width={20}
+                                      height={20}
+                                      className='h-5 w-5 rounded object-cover'
+                                    />
+                                  ) : (
+                                    <Building2 className='h-5 w-5 text-muted-foreground' />
+                                  )}
+                                  {company.name}
+                                </div>
+                                {field.value === company.id && (
+                                  <Check size={16} className='ml-auto' />
+                                )}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -196,9 +256,9 @@ export function AddTargetCompanyForm({
                 <FormItem>
                   <FormLabel>Why</FormLabel>
                   <FormControl>
-                    <textarea
-                      className='flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+                    <Textarea
                       placeholder='Why are you targeting this company?'
+                      className='min-h-20 max-h-40 resize-y'
                       {...field}
                     />
                   </FormControl>
@@ -214,9 +274,9 @@ export function AddTargetCompanyForm({
                 <FormItem>
                   <FormLabel>Note</FormLabel>
                   <FormControl>
-                    <textarea
-                      className='flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
-                      placeholder='Additional notes...'
+                    <Textarea
+                      placeholder='Additionally notes...'
+                      className='min-h-20 max-h-40 resize-y'
                       {...field}
                     />
                   </FormControl>

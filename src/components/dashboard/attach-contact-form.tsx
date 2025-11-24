@@ -74,24 +74,24 @@ export function AttachContactForm({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <UserPlus className="h-4 w-4 mr-2" />
+        <Button size='sm' variant='outline'>
+          <UserPlus className='h-4 w-4 mr-2' />
           Attach Existing
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className='sm:max-w-[400px]'>
         <DialogHeader>
           <DialogTitle>Attach Existing Contact</DialogTitle>
           <DialogDescription>
             Search and select an existing contact to attach to {companyName}.
           </DialogDescription>
         </DialogHeader>
-        <Command className="border rounded-md">
+        <Command className='border rounded-md'>
           <CommandInput
-            placeholder="Search contacts..."
-            className="focus:ring-0 focus:outline-none"
+            placeholder='Search contacts...'
+            className='focus:ring-0 focus:outline-none'
           />
-          <CommandList className="h-[300px] max-h-[300px]">
+          <CommandList className='h-[400px] max-h-[300px]'>
             <CommandEmpty>No contacts found.</CommandEmpty>
             <CommandGroup>
               {availableContacts.map((contact) => (
@@ -102,19 +102,19 @@ export function AttachContactForm({
                   }`}
                   onSelect={() => handleSelect(contact.id)}
                   disabled={isSubmitting}
-                  className="cursor-pointer"
+                  className='cursor-pointer'
                 >
-                  <div className="flex flex-col flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{contact.name}</span>
+                  <div className='flex flex-col flex-1'>
+                    <div className='flex items-center gap-2'>
+                      <span className='font-medium'>{contact.name}</span>
                       {selectedContactId === contact.id && isSubmitting && (
-                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <Loader2 className='h-3 w-3 animate-spin' />
                       )}
                       {selectedContactId === contact.id && !isSubmitting && (
-                        <Check className="h-3 w-3" />
+                        <Check className='h-3 w-3' />
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className='text-xs text-muted-foreground'>
                       {contact.title && <span>{contact.title}</span>}
                       {contact.title && contact.company?.[0]?.name && (
                         <span> · </span>
@@ -124,7 +124,7 @@ export function AttachContactForm({
                       )}
                     </div>
                     {contact.email && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className='text-xs text-muted-foreground'>
                         {contact.email}
                       </span>
                     )}
