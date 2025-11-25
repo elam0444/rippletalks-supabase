@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -13,14 +13,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -28,41 +28,41 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { createCompany, updateCompany, type CompanyFormData } from "@/lib/actions/company"
-import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+} from '@/components/ui/dialog';
+import { createCompany, updateCompany, type CompanyFormData } from '@/lib/actions/company';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  name: z.string().min(1, "Company name is required").max(255),
+  name: z.string().min(1, 'Company name is required').max(255),
   legal_name: z.string().max(255).optional(),
-  website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  logo_url: z.string().url("Invalid URL").optional().or(z.literal("")),
+  website: z.string().url('Invalid URL').optional().or(z.literal('')),
+  logo_url: z.string().url('Invalid URL').optional().or(z.literal('')),
   description: z.string().max(1000).optional(),
   industry_id: z.string().optional(),
-})
+});
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof formSchema>;
 
 interface Industry {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
-interface CompanyFormProps {
-  mode: "create" | "edit"
-  industries: Industry[]
+interface CompanyFormProperties {
+  mode: 'create' | 'edit';
+  industries: Industry[];
   initialData?: {
-    id: string
-    name: string
-    legal_name?: string | null
-    website?: string | null
-    logo_url?: string | null
-    description?: string | null
-    industry_id?: string | null
-  }
-  trigger?: React.ReactNode
-  onSuccess?: () => void
+    id: string;
+    name: string;
+    legal_name?: string | null;
+    website?: string | null;
+    logo_url?: string | null;
+    description?: string | null;
+    industry_id?: string | null;
+  };
+  trigger?: React.ReactNode;
+  onSuccess?: () => void;
 }
 
 export function CompanyForm({
@@ -71,24 +71,24 @@ export function CompanyForm({
   initialData,
   trigger,
   onSuccess,
-}: CompanyFormProps) {
-  const [open, setOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+}: CompanyFormProperties) {
+  const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData?.name || "",
-      legal_name: initialData?.legal_name || "",
-      website: initialData?.website || "",
-      logo_url: initialData?.logo_url || "",
-      description: initialData?.description || "",
-      industry_id: initialData?.industry_id || "",
+      name: initialData?.name || '',
+      legal_name: initialData?.legal_name || '',
+      website: initialData?.website || '',
+      logo_url: initialData?.logo_url || '',
+      description: initialData?.description || '',
+      industry_id: initialData?.industry_id || '',
     },
-  })
+  });
 
   async function onSubmit(values: FormValues) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     const formData: CompanyFormData = {
       name: values.name,
@@ -97,39 +97,37 @@ export function CompanyForm({
       logo_url: values.logo_url || null,
       description: values.description || null,
       industry_id: values.industry_id || null,
-    }
+    };
 
     const result =
-      mode === "create"
+      mode === 'create'
         ? await createCompany(formData)
-        : await updateCompany(initialData!.id, formData)
+        : await updateCompany(initialData!.id, formData);
 
-    setIsSubmitting(false)
+    setIsSubmitting(false);
 
     if (result.success) {
-      toast.success(mode === "create" ? "Company created" : "Company updated")
-      setOpen(false)
-      form.reset()
-      onSuccess?.()
+      toast.success(mode === 'create' ? 'Company created' : 'Company updated');
+      setOpen(false);
+      form.reset();
+      onSuccess?.();
     } else {
-      toast.error(result.error || "Something went wrong")
+      toast.error(result.error || 'Something went wrong');
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger || <Button>{mode === "create" ? "Add Company" : "Edit"}</Button>}
+        {trigger || <Button>{mode === 'create' ? 'Add Company' : 'Edit'}</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>
-            {mode === "create" ? "Add New Company" : "Edit Company"}
-          </DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Add New Company' : 'Edit Company'}</DialogTitle>
           <DialogDescription>
-            {mode === "create"
-              ? "Add a new company to your dashboard."
-              : "Update the company details."}
+            {mode === 'create'
+              ? 'Add a new company to your dashboard.'
+              : 'Update the company details.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -196,10 +194,7 @@ export function CompanyForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Industry</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select an industry" />
@@ -237,23 +232,17 @@ export function CompanyForm({
             />
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {mode === "create" ? "Create Company" : "Save Changes"}
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {mode === 'create' ? 'Create Company' : 'Save Changes'}
               </Button>
             </div>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

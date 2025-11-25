@@ -1,25 +1,26 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import { ShareClient } from "@/components/share/share-client";
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { ShareClient } from '@/components/share/share-client';
 
 export default async function SharePage({ params }: { params: Promise<{ id: string }> }) {
-    const { id: clientCompanyId } = await params;
+  const { id: clientCompanyId } = await params;
 
-    if (!clientCompanyId) {
-        console.error("No clientCompanyId provided");
-        return <div>Invalid share link</div>;
-    }
+  if (!clientCompanyId) {
+    console.error('No clientCompanyId provided');
+    return <div>Invalid share link</div>;
+  }
 
-    const supabase = await createClient();
+  const supabase = await createClient();
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
 
-    const { data, error } = await supabase
-        .from("target_companies")
-        .select(`
+  const { data, error } = await supabase
+    .from('target_companies')
+    .select(
+      `
             id,
             why,
             note,
@@ -33,25 +34,25 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
               name,
               description
             )
-        `)
-        .eq("client_company_id", clientCompanyId)
-        .is("deleted_at", null); // <-- exclude deleted companies
+        `,
+    )
+    .eq('client_company_id', clientCompanyId)
+    .is('deleted_at', null); // <-- exclude deleted companies
 
-    if (error) {
-        console.error("Error fetching target companies:", error);
-        return <div>Error fetching companies</div>;
-    }
+  if (error) {
+    console.error('Error fetching target companies:', error);
+    return <div>Error fetching companies</div>;
+  }
 
-    const companies =
-        (data || []).map((item) => ({
-            id: String(item.companies.id),
-            name: item.companies.name,
-            description: item.companies.description,
-            why: item.why,
-            note: item.note,
-            selected: item.selected,
-            relationship_category: item.relationship_category?.name || "Uncategorized",
-        }));
+  const companies = (data || []).map((item) => ({
+    id: String(item.companies.id),
+    name: item.companies.name,
+    description: item.companies.description,
+    why: item.why,
+    note: item.note,
+    selected: item.selected,
+    relationship_category: item.relationship_category?.name || 'Uncategorized',
+  }));
 
-    return <ShareClient clientCompanyId={clientCompanyId} companies={companies} />;
+  return <ShareClient clientCompanyId={clientCompanyId} companies={companies} />;
 }

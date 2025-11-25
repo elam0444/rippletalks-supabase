@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Command,
   CommandEmpty,
@@ -17,10 +17,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import { attachContact } from "@/lib/actions/contact";
-import { toast } from "sonner";
-import { Loader2, UserPlus, Check } from "lucide-react";
+} from '@/components/ui/command';
+import { attachContact } from '@/lib/actions/contact';
+import { toast } from 'sonner';
+import { Loader2, UserPlus, Check } from 'lucide-react';
 
 interface AvailableContact {
   id: string;
@@ -35,7 +35,7 @@ interface AvailableContact {
     | null;
 }
 
-interface AttachContactFormProps {
+interface AttachContactFormProperties {
   companyId: string;
   companyName: string;
   availableContacts: AvailableContact[];
@@ -45,10 +45,10 @@ export function AttachContactForm({
   companyId,
   companyName,
   availableContacts,
-}: AttachContactFormProps) {
+}: AttachContactFormProperties) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedContactId, setSelectedContactId] = useState<string>("");
+  const [selectedContactId, setSelectedContactId] = useState<string>('');
 
   async function handleSelect(contactId: string) {
     setSelectedContactId(contactId);
@@ -59,11 +59,11 @@ export function AttachContactForm({
     setIsSubmitting(false);
 
     if (result.success) {
-      toast.success("Contact attached");
+      toast.success('Contact attached');
       setOpen(false);
-      setSelectedContactId("");
+      setSelectedContactId('');
     } else {
-      toast.error(result.error || "Something went wrong");
+      toast.error(result.error || 'Something went wrong');
     }
   }
 
@@ -97,9 +97,7 @@ export function AttachContactForm({
               {availableContacts.map((contact) => (
                 <CommandItem
                   key={contact.id}
-                  value={`${contact.name} ${contact.email || ""} ${
-                    contact.title || ""
-                  }`}
+                  value={`${contact.name} ${contact.email || ''} ${contact.title || ''}`}
                   onSelect={() => handleSelect(contact.id)}
                   disabled={isSubmitting}
                   className="cursor-pointer"
@@ -116,17 +114,11 @@ export function AttachContactForm({
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {contact.title && <span>{contact.title}</span>}
-                      {contact.title && contact.company?.[0]?.name && (
-                        <span> · </span>
-                      )}
-                      {contact.company?.[0]?.name && (
-                        <span>{contact.company[0].name}</span>
-                      )}
+                      {contact.title && contact.company?.[0]?.name && <span> · </span>}
+                      {contact.company?.[0]?.name && <span>{contact.company[0].name}</span>}
                     </div>
                     {contact.email && (
-                      <span className="text-xs text-muted-foreground">
-                        {contact.email}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{contact.email}</span>
                     )}
                   </div>
                 </CommandItem>

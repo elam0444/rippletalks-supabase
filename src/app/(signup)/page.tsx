@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 
-import { createClient } from '@/lib/supabase/client'
-import { signupSchema, type SignupFormData } from '@/lib/validations/auth'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { createClient } from '@/lib/supabase/client';
+import { signupSchema, type SignupFormData } from '@/lib/validations/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
@@ -18,7 +18,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -26,11 +26,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
+} from '@/components/ui/form';
 
 export default function SignupPage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -39,25 +39,25 @@ export default function SignupPage() {
       password: '',
       confirmPassword: '',
     },
-  })
+  });
 
   async function onSubmit(data: SignupFormData) {
-    setIsLoading(true)
-    const supabase = createClient()
+    setIsLoading(true);
+    const supabase = createClient();
 
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-    })
+    });
 
     if (error) {
-      toast.error(error.message)
-      setIsLoading(false)
-      return
+      toast.error(error.message);
+      setIsLoading(false);
+      return;
     }
 
-    toast.success('Check your email to confirm your account!')
-    router.push('/login')
+    toast.success('Check your email to confirm your account!');
+    router.push('/login');
   }
 
   return (
@@ -65,9 +65,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>
-            Enter your email and password to create your account
-          </CardDescription>
+          <CardDescription>Enter your email and password to create your account</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -79,11 +77,7 @@ export default function SignupPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="name@example.com"
-                        {...field}
-                      />
+                      <Input type="email" placeholder="name@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -131,5 +125,5 @@ export default function SignupPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

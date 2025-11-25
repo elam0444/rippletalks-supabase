@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -13,7 +13,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from '@/components/ui/form';
 import {
   Dialog,
   DialogContent,
@@ -21,54 +21,50 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { updateContact } from "@/lib/actions/contact"
-import { toast } from "sonner"
-import { Loader2, Pencil } from "lucide-react"
+} from '@/components/ui/dialog';
+import { updateContact } from '@/lib/actions/contact';
+import { toast } from 'sonner';
+import { Loader2, Pencil } from 'lucide-react';
 
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  name: z.string().min(1, 'Name is required').max(255),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
   title: z.string().max(255).optional(),
   phone: z.string().max(50).optional(),
-  avatar_url: z.string().url("Invalid URL").optional().or(z.literal("")),
-})
+  avatar_url: z.string().url('Invalid URL').optional().or(z.literal('')),
+});
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof formSchema>;
 
-interface EditContactFormProps {
-  contactId: string
-  companyId: string
+interface EditContactFormProperties {
+  contactId: string;
+  companyId: string;
   initialData: {
-    name: string
-    email?: string | null
-    title?: string | null
-    phone?: string | null
-    avatar_url?: string | null
-  }
+    name: string;
+    email?: string | null;
+    title?: string | null;
+    phone?: string | null;
+    avatar_url?: string | null;
+  };
 }
 
-export function EditContactForm({
-  contactId,
-  companyId,
-  initialData,
-}: EditContactFormProps) {
-  const [open, setOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function EditContactForm({ contactId, companyId, initialData }: EditContactFormProperties) {
+  const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData.name,
-      email: initialData.email || "",
-      title: initialData.title || "",
-      phone: initialData.phone || "",
-      avatar_url: initialData.avatar_url || "",
+      email: initialData.email || '',
+      title: initialData.title || '',
+      phone: initialData.phone || '',
+      avatar_url: initialData.avatar_url || '',
     },
-  })
+  });
 
   async function onSubmit(values: FormValues) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     const result = await updateContact(contactId, companyId, {
       name: values.name,
@@ -76,31 +72,33 @@ export function EditContactForm({
       title: values.title || null,
       phone: values.phone || null,
       avatar_url: values.avatar_url || null,
-    })
+    });
 
-    setIsSubmitting(false)
+    setIsSubmitting(false);
 
     if (result.success) {
-      toast.success("Contact updated")
-      setOpen(false)
+      toast.success('Contact updated');
+      setOpen(false);
     } else {
-      toast.error(result.error || "Something went wrong")
+      toast.error(result.error || 'Something went wrong');
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Contact</DialogTitle>
-          <DialogDescription>
-            Update contact details for {initialData.name}
-          </DialogDescription>
+          <DialogDescription>Update contact details for {initialData.name}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -175,17 +173,11 @@ export function EditContactForm({
             />
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
               </Button>
             </div>
@@ -193,5 +185,5 @@ export function EditContactForm({
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

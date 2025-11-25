@@ -1,6 +1,6 @@
-"use client"
+'use client';
 
-import { useState } from "react"
+import { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,43 +11,47 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
-import { removeContact } from "@/lib/actions/contact"
-import { toast } from "sonner"
-import { Loader2, X } from "lucide-react"
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { removeContact } from '@/lib/actions/contact';
+import { toast } from 'sonner';
+import { Loader2, X } from 'lucide-react';
 
-interface RemoveContactButtonProps {
-  contactId: string
-  companyId: string
-  contactName: string
+interface RemoveContactButtonProperties {
+  contactId: string;
+  companyId: string;
+  contactName: string;
 }
 
 export function RemoveContactButton({
   contactId,
   companyId,
   contactName,
-}: RemoveContactButtonProps) {
-  const [open, setOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+}: RemoveContactButtonProperties) {
+  const [open, setOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleRemove() {
-    setIsDeleting(true)
-    const result = await removeContact(contactId, companyId)
-    setIsDeleting(false)
+    setIsDeleting(true);
+    const result = await removeContact(contactId, companyId);
+    setIsDeleting(false);
 
     if (result.success) {
-      toast.success("Contact removed")
-      setOpen(false)
+      toast.success('Contact removed');
+      setOpen(false);
     } else {
-      toast.error(result.error || "Failed to remove contact")
+      toast.error(result.error || 'Failed to remove contact');
     }
   }
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+        >
           <X className="h-4 w-4" />
         </Button>
       </AlertDialogTrigger>
@@ -71,5 +75,5 @@ export function RemoveContactButton({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

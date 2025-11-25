@@ -1,65 +1,65 @@
-'use client'
+'use client';
 
-import { useCallback, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { useCallback, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
-interface CSVDropzoneProps {
-  onFileSelect: (file: File) => void
-  className?: string
+interface CSVDropzoneProperties {
+  onFileSelect: (file: File) => void;
+  className?: string;
 }
 
-export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProps) {
-  const [isDragging, setIsDragging] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProperties) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFile = useCallback(
     (file: File) => {
       if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-        setSelectedFile(file)
-        onFileSelect(file)
+        setSelectedFile(file);
+        onFileSelect(file);
       } else {
-        alert('Please select a CSV file')
+        alert('Please select a CSV file');
       }
     },
-    [onFileSelect]
-  )
+    [onFileSelect],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }, [])
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }, [])
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
-      e.preventDefault()
-      setIsDragging(false)
+      e.preventDefault();
+      setIsDragging(false);
 
-      const file = e.dataTransfer.files[0]
+      const file = e.dataTransfer.files[0];
       if (file) {
-        handleFile(file)
+        handleFile(file);
       }
     },
-    [handleFile]
-  )
+    [handleFile],
+  );
 
   const handleClick = useCallback(() => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.csv'
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.addEventListener('change', (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        handleFile(file)
+        handleFile(file);
       }
-    }
-    input.click()
-  }, [handleFile])
+    });
+    input.click();
+  }, [handleFile]);
 
   return (
     <div
@@ -68,7 +68,7 @@ export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProps) {
         isDragging
           ? 'border-primary bg-primary/5'
           : 'border-muted-foreground/25 hover:border-muted-foreground/50',
-        className
+        className,
       )}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -97,21 +97,13 @@ export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProps) {
         </div>
       ) : (
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Drag and drop your CSV file here, or
-          </p>
+          <p className="text-sm text-muted-foreground">Drag and drop your CSV file here, or</p>
         </div>
       )}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="mt-4"
-        onClick={handleClick}
-      >
+      <Button type="button" variant="outline" size="sm" className="mt-4" onClick={handleClick}>
         {selectedFile ? 'Choose Different File' : 'Browse Files'}
       </Button>
     </div>
-  )
+  );
 }

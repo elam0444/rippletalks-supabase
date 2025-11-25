@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -12,14 +12,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -27,34 +27,34 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { updateTargetCompany } from "@/lib/actions/target-company"
-import { toast } from "sonner"
-import { Loader2, Pencil } from "lucide-react"
+} from '@/components/ui/dialog';
+import { updateTargetCompany } from '@/lib/actions/target-company';
+import { toast } from 'sonner';
+import { Loader2, Pencil } from 'lucide-react';
 
 const formSchema = z.object({
-  relationship_category: z.string().uuid("Please select a category"),
+  relationship_category: z.string().uuid('Please select a category'),
   why: z.string().max(1000).optional(),
   note: z.string().max(1000).optional(),
-})
+});
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof formSchema>;
 
 interface Category {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
-interface EditTargetCompanyFormProps {
-  targetId: string
-  clientCompanyId: string
-  targetCompanyName: string
-  categories: Category[]
+interface EditTargetCompanyFormProperties {
+  targetId: string;
+  clientCompanyId: string;
+  targetCompanyName: string;
+  categories: Category[];
   initialData: {
-    relationship_category: string
-    why?: string | null
-    note?: string | null
-  }
+    relationship_category: string;
+    why?: string | null;
+    note?: string | null;
+  };
 }
 
 export function EditTargetCompanyForm({
@@ -63,51 +63,53 @@ export function EditTargetCompanyForm({
   targetCompanyName,
   categories,
   initialData,
-}: EditTargetCompanyFormProps) {
-  const [open, setOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+}: EditTargetCompanyFormProperties) {
+  const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       relationship_category: initialData.relationship_category,
-      why: initialData.why || "",
-      note: initialData.note || "",
+      why: initialData.why || '',
+      note: initialData.note || '',
     },
-  })
+  });
 
   async function onSubmit(values: FormValues) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     const result = await updateTargetCompany(targetId, clientCompanyId, {
       relationship_category: values.relationship_category,
       why: values.why || null,
       note: values.note || null,
-    })
+    });
 
-    setIsSubmitting(false)
+    setIsSubmitting(false);
 
     if (result.success) {
-      toast.success("Target company updated")
-      setOpen(false)
+      toast.success('Target company updated');
+      setOpen(false);
     } else {
-      toast.error(result.error || "Something went wrong")
+      toast.error(result.error || 'Something went wrong');
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Target Company</DialogTitle>
-          <DialogDescription>
-            Update targeting details for {targetCompanyName}
-          </DialogDescription>
+          <DialogDescription>Update targeting details for {targetCompanyName}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -173,17 +175,11 @@ export function EditTargetCompanyForm({
             />
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
               </Button>
             </div>
@@ -191,5 +187,5 @@ export function EditTargetCompanyForm({
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

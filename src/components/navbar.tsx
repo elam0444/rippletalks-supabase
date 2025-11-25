@@ -1,5 +1,5 @@
-import Link from "next/link";
-import Image from "next/image";
+import Link from 'next/link';
+import Image from 'next/image';
 // import { createClient } from "@/lib/supabase/server";
 // import { Button } from "@/components/ui/button";
 // import { SignOutButton } from "@/components/auth/sign-out-button";
@@ -11,16 +11,11 @@ export async function Navbar() {
   // } = await supabase.auth.getUser();
 
   return (
-    <nav className='border-b'>
-      <div className='mx-auto px-4 h-16 flex items-center justify-between'>
-        <Link href='/' className='flex items-center gap-2'>
-          <Image
-            src='/RippleTalks Logo_edited.png'
-            alt='RippleTalk Logo'
-            width={40}
-            height={40}
-          />
-          <span className='font-semibold text-lg'>Ripple Talk</span>
+    <nav className="border-b">
+      <div className="mx-auto px-4 h-16 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/RippleTalks Logo_edited.png" alt="RippleTalk Logo" width={40} height={40} />
+          <span className="font-semibold text-lg">Ripple Talk</span>
         </Link>
 
         {/* <div className="flex items-center gap-4">
