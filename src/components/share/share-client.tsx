@@ -25,6 +25,7 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
         Object.fromEntries(companies.map((c) => [c.id, c.selected ?? true]))
     );
     const [activeCompany, setActiveCompany] = useState<Company | null>(null);
+    const [viewMode, setViewMode] = useState<"tiles" | "table">("table"); // Table view default
 
     const toggle = (id: string) =>
         setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -47,7 +48,7 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
     });
 
     return (
-        <div className="max-w-4xl mx-auto p-6 space-y-6">
+        <div className="max-w-6xl mx-auto p-6 space-y-6">
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">Key Stakeholder Opportunities</h1>
@@ -55,8 +56,9 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
                     We uncovered 200 companies across 11 strategic stakeholder categories from Super Set portfolio. Ripple enables direct CEO introductions - uncheck any you'd rather pass on, or add new companies you want to connect with.
                 </p>
 
+                {/* Buttons below the text */}
                 {companies.length > 0 && (
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-wrap gap-2">
                         <Button
                             variant="outline"
                             className="border-black text-black bg-white hover:bg-gray-100"
@@ -64,13 +66,66 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
                         >
                             {allSelected ? "Deselect All" : "Select All"}
                         </Button>
+                        <Button
+                            variant="outline"
+                            className="border-black text-black bg-white hover:bg-gray-100"
+                            onClick={() => setViewMode(viewMode === "tiles" ? "table" : "tiles")}
+                        >
+                            {viewMode === "tiles" ? "Table View" : "Tile View"}
+                        </Button>
                     </div>
                 )}
             </div>
 
-            {/* Company cards grouped by relationship category */}
-            {Object.entries(groupedCompanies).map(([category, companies]) => (
-                <div key={category} className="space-y-4">
+            {/* Table view */}
+            {viewMode === "table" && (
+                <div className="overflow-x-auto mt-4">
+                    <table className="w-full table-auto border-collapse border border-gray-200">
+                        <thead>
+                            <tr className="bg-gray-100">
+                                <th className="border p-2 w-12"></th>
+                                <th className="border p-2 text-left">Company</th>
+                                <th className="border p-2 text-left">Description</th>
+                                <th className="border p-2 text-left">Category</th>
+                                <th className="border p-2 text-left">Why</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {companies.map(company => (
+                                <tr key={company.id} className="hover:bg-gray-50">
+                                    <td className="border p-2 text-center">
+                                        <button
+                                            onClick={() => toggle(company.id)}
+                                            className={`w-5 h-5 rounded-sm border flex items-center justify-center mx-auto ${selected[company.id]
+                                                ? "bg-green-500 border-green-500 text-white"
+                                                : "bg-white border-gray-300 text-gray-400"
+                                                }`}
+                                        >
+                                            {selected[company.id] && <Check size={12} />}
+                                        </button>
+                                    </td>
+                                    <td className="border p-2">{company.name}</td>
+                                    <td className="border p-2">{company.description || "—"}</td>
+                                    <td className="border p-2">{company.relationship_category || "—"}</td>
+                                    <td className="border p-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setActiveCompany(company)}
+                                        >
+                                            Why
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Tiles view */}
+            {viewMode === "tiles" && Object.entries(groupedCompanies).map(([category, companies]) => (
+                <div key={category} className="space-y-4 mt-4">
                     <h2 className="text-xl font-bold text-gray-700">{category}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {companies.map(company => (
@@ -78,9 +133,7 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
                                 key={company.id}
                                 className="flex flex-col p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white"
                             >
-                                {/* Card content split into 2 columns */}
                                 <div className="flex items-start space-x-4">
-                                    {/* Left column: small square check */}
                                     <button
                                         onClick={() => toggle(company.id)}
                                         className={`w-5 h-5 rounded-sm border flex items-center justify-center mt-1 ${selected[company.id]
@@ -90,8 +143,6 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
                                     >
                                         {selected[company.id] && <Check size={12} />}
                                     </button>
-
-                                    {/* Right column: text */}
                                     <div className="flex-1">
                                         <p className="font-semibold text-gray-800">{company.name}</p>
                                         {company.description && (
@@ -99,8 +150,6 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
                                         )}
                                     </div>
                                 </div>
-
-                                {/* Full width Why button */}
                                 <Button
                                     variant="outline"
                                     className="mt-4 w-full"
@@ -120,7 +169,7 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
                 </div>
             )}
 
-            {/* Side panel with animation */}
+            {/* Side panel */}
             <AnimatePresence>
                 {activeCompany && (
                     <motion.div
@@ -136,13 +185,12 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside panel
+                            onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-xl font-bold">{activeCompany.name}</h2>
                                 <Button variant="ghost" onClick={() => setActiveCompany(null)}>Close</Button>
                             </div>
-
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-semibold">Why</h3>
