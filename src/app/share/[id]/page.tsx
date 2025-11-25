@@ -1,4 +1,3 @@
-// app/share/[id]/page.tsx
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ShareClient } from "@/components/share/share-client";
@@ -21,20 +20,27 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
     const { data, error } = await supabase
         .from("target_companies")
         .select(`
-    id,
-    why,
-    note,
-    selected,
-    relationship_category:relationship_categories (
-      name
-    ),
-    companies!target_companies_target_company_id_fkey (
-      id,
-      name,
-      description
-    )
-  `)
-        .eq("client_company_id", clientCompanyId);
+            id,
+            why,
+            note,
+            selected,
+            deleted_at,
+            relationship_category:relationship_categories (
+              name
+            ),
+            companies!target_companies_target_company_id_fkey (
+              id,
+              name,
+              description
+            )
+        `)
+        .eq("client_company_id", clientCompanyId)
+        .is("deleted_at", null); // <-- exclude deleted companies
+
+    if (error) {
+        console.error("Error fetching target companies:", error);
+        return <div>Error fetching companies</div>;
+    }
 
     const companies =
         (data || []).map((item) => ({
@@ -46,11 +52,6 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
             selected: item.selected,
             relationship_category: item.relationship_category?.name || "Uncategorized",
         }));
-
-    if (error) {
-        console.error("Error fetching target companies:", error);
-        return <div>Error fetching companies</div>;
-    }
 
     return <ShareClient clientCompanyId={clientCompanyId} companies={companies} />;
 }
