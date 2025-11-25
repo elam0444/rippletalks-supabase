@@ -37,8 +37,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         `,
     )
     .eq('client_company_id', clientCompanyId)
-    // eslint-disable-next-line unicorn/no-null
-    .is('deleted_at', null); // <-- exclude deleted companies
+    .is('deleted_at', null);
 
   if (error) {
     console.error('Error fetching target companies:', error);

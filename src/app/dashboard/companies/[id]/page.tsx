@@ -90,6 +90,8 @@ export default async function CompanyDetailPage({ params }: PageProperties) {
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
+  console.log('targetCompanies:', targetCompanies);
+
   return (
     <div className="min-h-screen p-6">
       <div className="mx-auto max-w-6xl space-y-6">

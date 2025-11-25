@@ -14,7 +14,7 @@ export async function Navbar() {
     <nav className="border-b">
       <div className="mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/RippleTalks Logo_edited.png" alt="RippleTalk Logo" width={40} height={40} />
+          <Image src="/logo.png" alt="RippleTalk Logo" width={40} height={40} unoptimized />
           <span className="font-semibold text-lg">Ripple Talk</span>
         </Link>
 

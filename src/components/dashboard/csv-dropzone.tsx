@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utilities';
 
 interface CSVDropzoneProperties {
   onFileSelect: (file: File) => void;
@@ -25,22 +25,22 @@ export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProperties) 
     [onFileSelect],
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
+  const handleDragOver = useCallback((error: React.DragEvent) => {
+    error.preventDefault();
     setIsDragging(true);
   }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
+  const handleDragLeave = useCallback((error: React.DragEvent) => {
+    error.preventDefault();
     setIsDragging(false);
   }, []);
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
+    (error: React.DragEvent) => {
+      error.preventDefault();
       setIsDragging(false);
 
-      const file = e.dataTransfer.files[0];
+      const file = error.dataTransfer.files[0];
       if (file) {
         handleFile(file);
       }
@@ -52,8 +52,8 @@ export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProperties) 
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.csv';
-    input.addEventListener('change', (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
+    input.addEventListener('change', (error) => {
+      const file = (error.target as HTMLInputElement).files?.[0];
       if (file) {
         handleFile(file);
       }

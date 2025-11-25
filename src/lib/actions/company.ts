@@ -107,7 +107,7 @@ export async function updateCompany(id: string, formData: CompanyFormData): Prom
         .replaceAll(/[^a-z0-9-]/g, ''),
     })
     .eq('id', id)
-    .is('deleted_at', undefined);
+    .is('deleted_at', null);
 
   if (error) {
     if (error.code === '23505') {
@@ -136,7 +136,7 @@ export async function deleteCompany(id: string): Promise<ActionResult> {
     .from('companies')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
-    .is('deleted_at', undefined);
+    .is('deleted_at', null);
 
   if (error) {
     return { success: false, error: error.message };
@@ -164,13 +164,13 @@ export async function getCompanies() {
       )
     `,
     )
-    .is('deleted_at', undefined)
+    .is('deleted_at', null)
     .order('name');
 
   if (error) {
     return [];
   }
-
+  console.log('data:', data);
   return data;
 }
 
@@ -209,7 +209,7 @@ export async function getCompanyById(id: string) {
     `,
     )
     .eq('id', id)
-    .is('deleted_at', undefined)
+    .is('deleted_at', null)
     .single();
 
   if (error) {

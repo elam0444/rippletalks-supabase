@@ -5,4 +5,5 @@ module.exports = {
   trailingComma: 'all',
   arrowParens: 'always',
   endOfLine: 'auto',
+  parser: 'typescript',
 };

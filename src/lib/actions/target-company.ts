@@ -34,7 +34,7 @@ export async function addTargetCompany(formData: TargetCompanyFormData): Promise
   // Validate input
   const parsed = targetCompanySchema.safeParse(formData);
   if (!parsed.success) {
-    return { success: false, error: parsed.error.errors[0].message };
+    return { success: false, error: parsed.error.issues[0].message };
   }
 
   const { client_company_id, target_company_id, relationship_category, why, note } = parsed.data;

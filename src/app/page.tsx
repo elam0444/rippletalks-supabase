@@ -14,12 +14,7 @@ export default async function Home() {
       <div className="space-y-6 text-center flex flex-col items-center">
         {/* Logo + Title */}
         <div className="flex items-center gap-4">
-          <Image
-            src="/RippleTalks Logo_edited.png"
-            alt="RippleTalk Logo"
-            width={150}
-            height={150}
-          />
+          <Image src="/logo.png" alt="RippleTalk Logo" width={150} height={150} unoptimized />
           <h1 className="text-4xl font-bold tracking-tight">Welcome to Ripple Talk</h1>
         </div>
 
