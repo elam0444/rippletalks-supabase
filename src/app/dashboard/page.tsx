@@ -1,6 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import {
@@ -11,18 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CSVUploadCard } from "@/components/dashboard/csv-upload-card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Building2, Globe, ChevronRight, Plus } from "lucide-react";
+import { Building2, Plus } from "lucide-react";
 import { CompanyForm } from "@/components/dashboard/company-form";
 import { getCompanies, getIndustries } from "@/lib/actions/company";
 import { Button } from "@/components/ui/button";
+import { CompaniesTable } from "@/components/dashboard/companies-table";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -76,67 +67,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {companies && companies.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow className='bg-muted/50'>
-                    <TableHead className='w-[300px]'>Company</TableHead>
-                    <TableHead>Industry</TableHead>
-                    <TableHead>Website</TableHead>
-                    <TableHead className='w-[50px]'></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {companies.map((company) => (
-                    <TableRow key={company.id} className='group'>
-                      <TableCell>
-                        <Link
-                          href={`/dashboard/companies/${company.id}`}
-                          className='flex items-center gap-3 font-medium hover:text-primary'
-                        >
-                          {company.logo_url ? (
-                            <Image
-                              src={company.logo_url}
-                              alt={company.name}
-                              className='h-8 w-8 rounded object-cover'
-                            />
-                          ) : (
-                            <div className='flex h-8 w-8 items-center justify-center rounded bg-muted'>
-                              <Building2 className='h-4 w-4 text-muted-foreground' />
-                            </div>
-                          )}
-                          {company.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className='text-muted-foreground'>
-                        {/* @ts-expect-error - Supabase returns single object for foreign key relation */}
-                        {company.industries?.name || "—"}
-                      </TableCell>
-                      <TableCell>
-                        {company.website ? (
-                          <a
-                            href={company.website}
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            className='flex items-center gap-1 text-sm text-muted-foreground hover:text-primary'
-                          >
-                            <Globe className='h-3 w-3' />
-                            {company.website
-                              .replace(/^https?:\/\//, "")
-                              .replace(/\/$/, "")}
-                          </a>
-                        ) : (
-                          <span className='text-muted-foreground'>—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Link href={`/dashboard/companies/${company.id}`}>
-                          <ChevronRight className='h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100' />
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <CompaniesTable companies={companies} />
             ) : (
               <div className='py-8 text-center text-muted-foreground'>
                 No companies found. Upload a CSV to get started.
