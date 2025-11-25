@@ -36,7 +36,7 @@ export async function createCompany(formData: CompanyFormData): Promise<ActionRe
   // Validate input
   const parsed = companySchema.safeParse(formData);
   if (!parsed.success) {
-    return { success: false, error: parsed.error.errors[0].message };
+    return { success: false, error: parsed.error?.issues[0].message };
   }
 
   const { name, legal_name, website, logo_url, description, industry_id } = parsed.data;
@@ -87,7 +87,7 @@ export async function updateCompany(id: string, formData: CompanyFormData): Prom
   // Validate input
   const parsed = companySchema.safeParse(formData);
   if (!parsed.success) {
-    return { success: false, error: parsed.error.errors[0].message };
+    return { success: false, error: parsed.error?.issues[0].message };
   }
 
   const { name, legal_name, website, logo_url, description, industry_id } = parsed.data;

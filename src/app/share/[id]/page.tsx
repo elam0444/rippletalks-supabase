@@ -37,6 +37,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         `,
     )
     .eq('client_company_id', clientCompanyId)
+    // eslint-disable-next-line unicorn/no-null
     .is('deleted_at', null); // <-- exclude deleted companies
 
   if (error) {
@@ -44,15 +45,26 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
     return <div>Error fetching companies</div>;
   }
 
-  const companies = (data || []).map((item) => ({
-    id: String(item.companies.id),
-    name: item.companies.name,
-    description: item.companies.description,
-    why: item.why,
-    note: item.note,
-    selected: item.selected,
-    relationship_category: item.relationship_category?.name || 'Uncategorized',
-  }));
+  const companies = (data || []).flatMap((item) => {
+    let companiesArray: typeof item.companies = [];
+
+    if (Array.isArray(item.companies)) {
+      companiesArray = item.companies;
+    } else if (item.companies) {
+      companiesArray = [item.companies];
+    }
+
+    // Map to expected structure
+    return companiesArray.map((company: { id: any; name: any; description: any }) => ({
+      id: String(company.id),
+      name: company.name,
+      description: company.description,
+      why: item.why,
+      note: item.note,
+      selected: item.selected,
+      relationship_category: item.relationship_category?.[0]?.name || 'Uncategorized',
+    }));
+  });
 
   return <ShareClient clientCompanyId={clientCompanyId} companies={companies} />;
 }

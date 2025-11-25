@@ -60,13 +60,13 @@ export function ShareClient({ companies = [], clientCompanyId }: Properties) {
 
   const updateSelectedInDB = async (companyId: string, value: boolean) => {
     try {
-      const res = await fetch('/api/target-company/update', {
+      const response = await fetch('/api/target-company/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientCompanyId, companyId, selected: value }),
       });
-      const data = await res.json();
-      if (!res.ok) console.error('API error:', data.error);
+      const data = await response.json();
+      if (!response.ok) console.error('API error:', data.error);
     } catch (error) {
       console.error('Unexpected API error:', error);
     }
@@ -74,13 +74,13 @@ export function ShareClient({ companies = [], clientCompanyId }: Properties) {
 
   const deleteCompanyInDB = async (companyId: string) => {
     try {
-      const res = await fetch('/api/target-company/delete', {
+      const response = await fetch('/api/target-company/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientCompanyId, companyId }),
       });
-      const data = await res.json();
-      if (res.ok) {
+      const data = await response.json();
+      if (response.ok) {
         // Remove company locally to refresh UI
         setCompaniesList((previous) => previous.filter((c) => c.id !== companyId));
         setCompanyToDelete(null);
@@ -99,7 +99,7 @@ export function ShareClient({ companies = [], clientCompanyId }: Properties) {
         <h1 className="text-3xl font-bold text-gray-900">Key Stakeholder Opportunities</h1>
         <p className="mt-2 text-gray-600">
           We uncovered 200 companies across 11 strategic stakeholder categories from Super Set
-          portfolio. Ripple enables direct CEO introductions - uncheck any you'd rather pass on, or
+          portfolio. Ripple enables direct CEO introductions - uncheck any you&apos;d rather pass
           add new companies you want to connect with.
         </p>
 
@@ -272,7 +272,7 @@ export function ShareClient({ companies = [], clientCompanyId }: Properties) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(error) => error.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">{activeCompany.name}</h2>

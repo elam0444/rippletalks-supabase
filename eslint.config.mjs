@@ -33,6 +33,7 @@ export default defineConfig({
     ...reactPlugin.configs.recommended.rules,
     ...unicornPlugin.configs.recommended.rules,
 
+    'unicorn/no-null': 'off',
     "react/react-in-jsx-scope": "off",
     "react/no-unescaped-entities": "warn",
     "react/prop-types": "off",
