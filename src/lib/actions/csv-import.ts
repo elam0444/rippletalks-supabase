@@ -173,7 +173,7 @@ export async function importTargetCompaniesFromCSV(
         continue
       }
 
-      // Check if already targeted
+      // Check if already targeted (non-deleted)
       if (alreadyTargetedIds.has(targetCompany.id)) {
         results.push({
           rowNumber,
@@ -185,27 +185,61 @@ export async function importTargetCompaniesFromCSV(
         continue
       }
 
-      // Insert target company
-      const { data: insertedData, error } = await supabase
+      // Check if a soft-deleted record exists
+      const { data: existingRecord } = await supabase
         .from("target_companies")
-        .insert({
-          profile_id: profile.id,
-          client_company_id: clientCompanyId,
-          target_company_id: targetCompany.id,
-          relationship_category: categoryId,
-          why: why || null,
-          note: null,
-          added_by_profile_id: profile.id,
-        })
         .select("id")
-        .single()
+        .eq("client_company_id", clientCompanyId)
+        .eq("target_company_id", targetCompany.id)
+        .not("deleted_at", "is", null)
+        .maybeSingle()
 
-      if (error) {
+      let resultData
+      let error
+
+      // If a soft-deleted record exists, restore it
+      if (existingRecord) {
+        const result = await supabase
+          .from("target_companies")
+          .update({
+            deleted_at: null,
+            relationship_category: categoryId,
+            why: why || null,
+            note: null,
+            added_by_profile_id: profile.id,
+          })
+          .eq("id", existingRecord.id)
+          .select("id")
+          .single()
+
+        resultData = result.data
+        error = result.error
+      } else {
+        // Otherwise, insert a new record
+        const result = await supabase
+          .from("target_companies")
+          .insert({
+            profile_id: profile.id,
+            client_company_id: clientCompanyId,
+            target_company_id: targetCompany.id,
+            relationship_category: categoryId,
+            why: why || null,
+            note: null,
+            added_by_profile_id: profile.id,
+          })
+          .select("id")
+          .single()
+
+        resultData = result.data
+        error = result.error
+      }
+
+      if (error || !resultData) {
         results.push({
           rowNumber,
           targetCompanyName,
           success: false,
-          error: error.message,
+          error: error?.message || "Failed to add target company",
         })
         failureCount++
       } else {
@@ -213,7 +247,7 @@ export async function importTargetCompaniesFromCSV(
           rowNumber,
           targetCompanyName,
           success: true,
-          targetCompanyId: insertedData.id,
+          targetCompanyId: resultData.id,
         })
         successCount++
         // Add to already targeted set to prevent duplicates within same batch

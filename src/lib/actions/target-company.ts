@@ -58,6 +58,39 @@ export async function addTargetCompany(
     return { success: false, error: "Profile not found" }
   }
 
+  // Check if a soft-deleted record exists
+  const { data: existingRecord } = await supabase
+    .from("target_companies")
+    .select("id")
+    .eq("client_company_id", client_company_id)
+    .eq("target_company_id", target_company_id)
+    .not("deleted_at", "is", "null")
+    .maybeSingle()
+
+  // If a soft-deleted record exists, restore it
+  if (existingRecord) {
+    const { data, error } = await supabase
+      .from("target_companies")
+      .update({
+        deleted_at: null,
+        relationship_category,
+        why: why || null,
+        note: note || null,
+        added_by_profile_id: profile.id,
+      })
+      .eq("id", existingRecord.id)
+      .select("id")
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath(`/dashboard/companies/${client_company_id}`)
+    return { success: true, data: { id: data.id } }
+  }
+
+  // Otherwise, insert a new record
   const { data, error } = await supabase
     .from("target_companies")
     .insert({

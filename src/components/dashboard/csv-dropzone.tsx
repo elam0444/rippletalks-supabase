@@ -8,9 +8,10 @@ interface CSVDropzoneProps {
   onFileSelect: (file: File) => void
   className?: string
   disabled?: boolean
+  onDownloadTemplate?: () => void
 }
 
-export function CSVDropzone({ onFileSelect, className, disabled = false }: CSVDropzoneProps) {
+export function CSVDropzone({ onFileSelect, className, disabled = false, onDownloadTemplate }: CSVDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
@@ -77,6 +78,18 @@ export function CSVDropzone({ onFileSelect, className, disabled = false }: CSVDr
       onDragLeave={disabled ? undefined : handleDragLeave}
       onDrop={disabled ? undefined : handleDrop}
     >
+      {onDownloadTemplate && (
+        <div className="absolute top-3 right-3">
+          <button
+            type="button"
+            onClick={onDownloadTemplate}
+            className="text-xs text-primary hover:underline"
+          >
+            Download template.csv
+          </button>
+        </div>
+      )}
+
       <svg
         className="mb-4 h-10 w-10 text-muted-foreground"
         fill="none"

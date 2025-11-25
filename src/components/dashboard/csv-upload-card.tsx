@@ -27,8 +27,6 @@ import {
 } from '@/lib/csv-parser'
 import { importTargetCompaniesFromCSV, type BatchImportResult } from '@/lib/actions/csv-import'
 import { toast } from 'sonner'
-import { Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 interface Company {
   id: string
@@ -47,6 +45,7 @@ export function CSVUploadCard({ companies }: CSVUploadCardProps) {
   const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [showResultsModal, setShowResultsModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const [resetDropzone, setResetDropzone] = useState(0)
 
   const handleFileSelect = useCallback(async (file: File) => {
     try {
@@ -95,6 +94,11 @@ export function CSVUploadCard({ companies }: CSVUploadCardProps) {
         toast.success(`Successfully imported ${result.successCount} target compan${result.successCount !== 1 ? 'ies' : 'y'}`)
       } else {
         toast.error(result.error || `${result.failureCount} row(s) failed to import`)
+      }
+
+      // Clear parse result after successful import
+      if (result.success) {
+        setParseResult(null)
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to import CSV data')
@@ -149,6 +153,17 @@ FusionWorks,Prospect,Matches our ideal customer profile.`
     toast.success('Error report downloaded successfully')
   }
 
+  const handleResultsModalClose = (open: boolean) => {
+    setShowResultsModal(open)
+
+    // When closing the results modal after a successful import, reset everything
+    if (!open && importResult?.success) {
+      setSelectedCompanyId('')
+      setImportResult(null)
+      setResetDropzone(prev => prev + 1) // Trigger dropzone reset
+    }
+  }
+
   return (
     <>
       <Card>
@@ -181,20 +196,11 @@ FusionWorks,Prospect,Matches our ideal customer profile.`
 
           {/* CSV Dropzone */}
           <CSVDropzone
+            key={resetDropzone}
             onFileSelect={handleFileSelect}
             disabled={!selectedCompanyId}
+            onDownloadTemplate={handleDownloadTemplate}
           />
-
-          {/* Download Template */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadTemplate}
-            className="w-full"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download CSV Template
-          </Button>
         </CardContent>
       </Card>
 
@@ -210,7 +216,7 @@ FusionWorks,Prospect,Matches our ideal customer profile.`
       {/* Results Modal */}
       <CSVResultsModal
         open={showResultsModal}
-        onOpenChange={setShowResultsModal}
+        onOpenChange={handleResultsModalClose}
         importResult={importResult}
         onDownloadReport={handleDownloadErrorReport}
       />
