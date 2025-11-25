@@ -103,7 +103,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <CSVUploadCard />
+          <CSVUploadCard companies={companies || []} />
         </div>
       </div>
     </div>

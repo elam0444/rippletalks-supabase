@@ -7,9 +7,10 @@ import { cn } from '@/lib/utils'
 interface CSVDropzoneProps {
   onFileSelect: (file: File) => void
   className?: string
+  disabled?: boolean
 }
 
-export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProps) {
+export function CSVDropzone({ onFileSelect, className, disabled = false }: CSVDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
@@ -49,6 +50,7 @@ export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProps) {
   )
 
   const handleClick = useCallback(() => {
+    if (disabled) return
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.csv'
@@ -59,20 +61,21 @@ export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProps) {
       }
     }
     input.click()
-  }, [handleFile])
+  }, [handleFile, disabled])
 
   return (
     <div
       className={cn(
         'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors',
-        isDragging
+        isDragging && !disabled
           ? 'border-primary bg-primary/5'
           : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+        disabled && 'opacity-50 cursor-not-allowed',
         className
       )}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDragOver={disabled ? undefined : handleDragOver}
+      onDragLeave={disabled ? undefined : handleDragLeave}
+      onDrop={disabled ? undefined : handleDrop}
     >
       <svg
         className="mb-4 h-10 w-10 text-muted-foreground"
@@ -109,6 +112,7 @@ export function CSVDropzone({ onFileSelect, className }: CSVDropzoneProps) {
         size="sm"
         className="mt-4"
         onClick={handleClick}
+        disabled={disabled}
       >
         {selectedFile ? 'Choose Different File' : 'Browse Files'}
       </Button>
