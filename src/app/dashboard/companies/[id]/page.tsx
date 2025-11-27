@@ -27,6 +27,7 @@ import { RemoveTargetCompanyButton } from "@/components/dashboard/remove-target-
 import { AddContactForm } from "@/components/dashboard/add-contact-form";
 import { EditContactForm } from "@/components/dashboard/edit-contact-form";
 import { RemoveContactButton } from "@/components/dashboard/remove-contact-button";
+import { ShareContactButton } from "@/components/dashboard/share-contact-button";
 import { AttachContactForm } from "@/components/dashboard/attach-contact-form";
 import { getIndustries, getCompanyById } from "@/lib/actions/company";
 import { getContactsByCompanyId, getAvailableContacts } from "@/lib/actions/contact";
@@ -240,6 +241,11 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                       </TableCell>
                       <TableCell>
                         <div className='flex items-center gap-1'>
+                          <ShareContactButton
+                            contactId={contact.id}
+                            companyId={company.id}
+                            contactName={contact.name}
+                          />
                           <EditContactForm
                             contactId={contact.id}
                             companyId={company.id}

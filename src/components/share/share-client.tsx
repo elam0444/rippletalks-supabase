@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo } from "react";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Trash2, Building2, Users, Mail, Phone, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 
 interface Company {
   id: string;
@@ -15,12 +16,31 @@ interface Company {
   relationship_category?: string;
 }
 
+interface Contact {
+  id: string;
+  name: string;
+  email?: string;
+  title?: string;
+  phone?: string;
+  avatar_url?: string;
+}
+
+interface SharedCompany {
+  id: string;
+  name: string;
+  logo_url?: string;
+  website?: string;
+  description?: string;
+}
+
 interface Props {
   companies: Company[];
   clientCompanyId?: string;
+  sharedContact?: Contact | null;
+  sharedCompany?: SharedCompany | null;
 }
 
-export function ShareClient({ companies = [], clientCompanyId }: Props) {
+export function ShareClient({ companies = [], clientCompanyId, sharedContact, sharedCompany }: Props) {
   const [selected, setSelected] = useState<Record<string, boolean>>(
     Object.fromEntries(companies.map((c) => [c.id, c.selected ?? true]))
   );
@@ -93,6 +113,91 @@ export function ShareClient({ companies = [], clientCompanyId }: Props) {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
+      {/* Shared Contact Info */}
+      {sharedContact && sharedCompany && (
+        <div className="bg-white border rounded-lg p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Shared Contact</h2>
+          <div className="flex items-start gap-6">
+            {/* Contact Info */}
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-3">
+                {sharedContact.avatar_url ? (
+                  <Image
+                    src={sharedContact.avatar_url}
+                    alt={sharedContact.name}
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                    <Users className="h-6 w-6 text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{sharedContact.name}</h3>
+                  {sharedContact.title && (
+                    <p className="text-sm text-gray-600">{sharedContact.title}</p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2 ml-15">
+                {sharedContact.email && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-gray-400" />
+                    <a href={`mailto:${sharedContact.email}`} className="text-blue-600 hover:underline">
+                      {sharedContact.email}
+                    </a>
+                  </div>
+                )}
+                {sharedContact.phone && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-700">{sharedContact.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Company Info */}
+            <div className="flex-1 border-l pl-6">
+              <div className="flex items-center gap-3 mb-3">
+                {sharedCompany.logo_url ? (
+                  <Image
+                    src={sharedCompany.logo_url}
+                    alt={sharedCompany.name}
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 rounded object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100">
+                    <Building2 className="h-6 w-6 text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{sharedCompany.name}</h3>
+                  {sharedCompany.website && (
+                    <a
+                      href={sharedCompany.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <Globe className="h-3 w-3" />
+                      Website
+                    </a>
+                  )}
+                </div>
+              </div>
+              {sharedCompany.description && (
+                <p className="text-sm text-gray-600 ml-15">{sharedCompany.description}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Key Stakeholder Opportunities</h1>
