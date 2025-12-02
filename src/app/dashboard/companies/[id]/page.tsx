@@ -27,9 +27,13 @@ import { RemoveTargetCompanyButton } from "@/components/dashboard/remove-target-
 import { AddContactForm } from "@/components/dashboard/add-contact-form";
 import { EditContactForm } from "@/components/dashboard/edit-contact-form";
 import { RemoveContactButton } from "@/components/dashboard/remove-contact-button";
+import { ShareContactButton } from "@/components/dashboard/share-contact-button";
 import { AttachContactForm } from "@/components/dashboard/attach-contact-form";
 import { getIndustries, getCompanyById } from "@/lib/actions/company";
-import { getContactsByCompanyId, getAvailableContacts } from "@/lib/actions/contact";
+import {
+  getContactsByCompanyId,
+  getAvailableContacts,
+} from "@/lib/actions/contact";
 import {
   getRelationshipCategories,
   getAvailableCompaniesToTarget,
@@ -62,12 +66,13 @@ export default async function CompanyDetailPage({ params }: PageProps) {
   const industries = await getIndustries();
 
   // Fetch relationship categories, available companies, and contacts
-  const [categories, availableCompanies, contacts, availableContacts] = await Promise.all([
-    getRelationshipCategories(),
-    getAvailableCompaniesToTarget(id),
-    getContactsByCompanyId(id),
-    getAvailableContacts(id),
-  ]);
+  const [categories, availableCompanies, contacts, availableContacts] =
+    await Promise.all([
+      getRelationshipCategories(),
+      getAvailableCompaniesToTarget(id),
+      getContactsByCompanyId(id),
+      getAvailableContacts(id),
+    ]);
 
   // Fetch target companies for this company (as client_company)
   const { data: targetCompanies } = await supabase
@@ -167,11 +172,9 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 <Users className='h-5 w-5' />
                 Contacts
               </CardTitle>
-              <CardDescription>
-                People at {company.name}
-              </CardDescription>
+              <CardDescription>People at {company.name}</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className='flex items-center gap-2'>
               <AttachContactForm
                 companyId={company.id}
                 companyName={company.name}
@@ -240,6 +243,11 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                       </TableCell>
                       <TableCell>
                         <div className='flex items-center gap-1'>
+                          {/* <ShareContactButton
+                            contactId={contact.id}
+                            companyId={company.id}
+                            contactName={contact.name}
+                          /> */}
                           <EditContactForm
                             contactId={contact.id}
                             companyId={company.id}

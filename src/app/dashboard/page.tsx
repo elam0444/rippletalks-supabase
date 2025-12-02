@@ -44,7 +44,7 @@ export default async function DashboardPage() {
 
         {/* Companies Table */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className='flex flex-row items-center justify-between'>
             <div>
               <CardTitle className='flex items-center gap-2'>
                 <Building2 className='h-5 w-5' />
@@ -55,11 +55,11 @@ export default async function DashboardPage() {
               </CardDescription>
             </div>
             <CompanyForm
-              mode="create"
+              mode='create'
               industries={industries}
               trigger={
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button size='sm'>
+                  <Plus className='h-4 w-4 mr-2' />
                   Add Company
                 </Button>
               }
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <CSVUploadCard companies={companies || []} />
+          {/* <CSVUploadCard companies={companies || []} /> */}
         </div>
       </div>
     </div>
