@@ -31,7 +31,7 @@ export default async function SharePage({
   // If there's a token, fetch the share link and contact information
   let sharedContact = null;
   let sharedCompany = null;
-  let contactDates: { available_date: string }[] = [];
+  let contactDates: { available_date: string; is_selected: boolean }[] = [];
 
   if (token) {
     const { data: shareLink, error: shareLinkError } = await supabase
@@ -88,7 +88,10 @@ export default async function SharePage({
           if (error) {
             console.error("Error fetching contact dates:", error);
           } else if (data) {
-            contactDates = data;
+            contactDates = (data || []).map((d: any) => ({
+              available_date: d.available_date,
+              is_selected: false,
+            }));
           }
 
           // Supabase returns the relation as a single object, not an array
