@@ -9,8 +9,30 @@ import {
   Mail,
   Phone,
   Globe,
+  Plus,
+  Search,
+  Loader2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 
@@ -47,6 +69,7 @@ interface Props {
   sharedContact?: Contact | null;
   sharedCompany?: SharedCompany | null;
   contactDates?: { available_date: string; is_selected: boolean }[];
+  token?: string;
 }
 
 export function ShareClient({
@@ -55,6 +78,7 @@ export function ShareClient({
   sharedContact,
   sharedCompany,
   contactDates: initialDates = [],
+  token,
 }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
 
@@ -75,8 +99,79 @@ export function ShareClient({
   const [companiesList, setCompaniesList] = useState(companies);
   const allSelected = companiesList.every((c) => selected[c.id]);
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
+  const [whyText, setWhyText] = useState("");
+  const [noteText, setNoteText] = useState("");
+  const [savingWhy, setSavingWhy] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<"tiles" | "table">("table");
+
+  // --- Browse & Add Companies ---
+  const [browseOpen, setBrowseOpen] = useState(false);
+  const [browseSearch, setBrowseSearch] = useState("");
+  const [browseResults, setBrowseResults] = useState<{ id: string; name: string; description?: string }[]>([]);
+  const [browseLoading, setBrowseLoading] = useState(false);
+  const [addingId, setAddingId] = useState<string | null>(null);
+
+  const fetchBrowseCompanies = async (search: string) => {
+    if (!token) return;
+    setBrowseLoading(true);
+    try {
+      const params = new URLSearchParams({ token });
+      if (search.trim()) params.set("search", search.trim());
+      const res = await fetch(`/api/share/companies?${params}`);
+      const data = await res.json();
+      if (res.ok) {
+        setBrowseResults(data.companies || []);
+      }
+    } catch (err) {
+      console.error("Error fetching companies:", err);
+    } finally {
+      setBrowseLoading(false);
+    }
+  };
+
+  const handleBrowseOpen = (open: boolean) => {
+    setBrowseOpen(open);
+    if (open) {
+      setBrowseSearch("");
+      fetchBrowseCompanies("");
+    }
+  };
+
+  const handleBrowseSearch = (value: string) => {
+    setBrowseSearch(value);
+    fetchBrowseCompanies(value);
+  };
+
+  const handleAddCompany = async (companyId: string) => {
+    if (!token) return;
+    setAddingId(companyId);
+    try {
+      const res = await fetch("/api/share/add-target", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, targetCompanyId: companyId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.company) {
+        const newCompany: Company = {
+          id: data.company.id,
+          name: data.company.name,
+          description: data.company.description,
+          selected: true,
+        };
+        setCompaniesList((prev) => [...prev, newCompany]);
+        setSelected((prev) => ({ ...prev, [data.company.id]: true }));
+        // Remove from browse results
+        setBrowseResults((prev) => prev.filter((c) => c.id !== companyId));
+      }
+    } catch (err) {
+      console.error("Error adding company:", err);
+    } finally {
+      setAddingId(null);
+    }
+  };
 
   const groupedCompanies = useMemo(() => {
     const groups: Record<string, Company[]> = {};
@@ -106,11 +201,17 @@ export function ShareClient({
 
   const updateSelectedInDB = async (companyId: string, value: boolean) => {
     try {
-      const res = await fetch("/api/target-company/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientCompanyId, companyId, selected: value }),
-      });
+      const res = token
+        ? await fetch("/api/share/update-target", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, targetCompanyId: companyId, selected: value }),
+          })
+        : await fetch("/api/target-company/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clientCompanyId, companyId, selected: value }),
+          });
       const data = await res.json();
       if (!res.ok) console.error("API error:", data.error);
     } catch (err) {
@@ -119,12 +220,19 @@ export function ShareClient({
   };
 
   const deleteCompanyInDB = async (companyId: string) => {
+    setDeleting(true);
     try {
-      const res = await fetch("/api/target-company/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientCompanyId, companyId }),
-      });
+      const res = token
+        ? await fetch("/api/share/delete-target", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, targetCompanyId: companyId }),
+          })
+        : await fetch("/api/target-company/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clientCompanyId, companyId }),
+          });
       const data = await res.json();
       if (!res.ok) console.error("API error:", data.error);
       else {
@@ -133,6 +241,41 @@ export function ShareClient({
       }
     } catch (err) {
       console.error("Unexpected API error:", err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const saveWhyAndNote = async () => {
+    if (!activeCompany) return;
+    setSavingWhy(true);
+    try {
+      const res = token
+        ? await fetch("/api/share/update-target", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, targetCompanyId: activeCompany.id, why: whyText, note: noteText }),
+          })
+        : await fetch("/api/target-company/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clientCompanyId, companyId: activeCompany.id, why: whyText, note: noteText }),
+          });
+      const data = await res.json();
+      if (res.ok) {
+        setCompaniesList((prev) =>
+          prev.map((c) =>
+            c.id === activeCompany.id ? { ...c, why: whyText, note: noteText } : c,
+          ),
+        );
+        setActiveCompany(null);
+      } else {
+        console.error("API error:", data.error);
+      }
+    } catch (err) {
+      console.error("Unexpected API error:", err);
+    } finally {
+      setSavingWhy(false);
     }
   };
 
@@ -303,24 +446,101 @@ export function ShareClient({
               Uncheck companies you’d rather pass on, or add new companies you want to connect with.
             </p>
 
-            {companiesList.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  className="border-black text-black bg-white hover:bg-gray-100"
-                  onClick={toggleAll}
-                >
-                  {allSelected ? "Deselect All" : "Select All"}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-black text-black bg-white hover:bg-gray-100"
-                  onClick={() => setViewMode(viewMode === "tiles" ? "table" : "tiles")}
-                >
-                  {viewMode === "tiles" ? "Table View" : "Tile View"}
-                </Button>
-              </div>
-            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {companiesList.length > 0 && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="border-black text-black bg-white hover:bg-gray-100"
+                    onClick={toggleAll}
+                  >
+                    {allSelected ? "Deselect All" : "Select All"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-black text-black bg-white hover:bg-gray-100"
+                    onClick={() => setViewMode(viewMode === "tiles" ? "table" : "tiles")}
+                  >
+                    {viewMode === "tiles" ? "Table View" : "Tile View"}
+                  </Button>
+                </>
+              )}
+              {token && (
+                <Dialog open={browseOpen} onOpenChange={handleBrowseOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Browse & Add Companies
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[700px]">
+                    <DialogHeader>
+                      <DialogTitle>Browse Companies</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Search companies..."
+                          value={browseSearch}
+                          onChange={(e) => handleBrowseSearch(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
+                      <div className="max-h-[500px] overflow-y-auto space-y-2">
+                        {browseLoading ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                          </div>
+                        ) : browseResults.length === 0 ? (
+                          <p className="text-center text-gray-500 py-8">
+                            No companies found.
+                          </p>
+                        ) : (
+                          browseResults.map((company) => (
+                            <div
+                              key={company.id}
+                              className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-gray-100">
+                                  <Building2 className="h-4 w-4 text-gray-400" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-gray-900 truncate">
+                                    {company.name}
+                                  </p>
+                                  {company.description && (
+                                    <p className="text-sm text-gray-500 truncate">
+                                      {company.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => handleAddCompany(company.id)}
+                                disabled={addingId === company.id}
+                                className="shrink-0 ml-2"
+                              >
+                                {addingId === company.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Add
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
 
           {/* Table or Tiles View */}
@@ -359,7 +579,11 @@ export function ShareClient({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setActiveCompany(company)}
+                          onClick={() => {
+                            setWhyText(company.why ?? "");
+                            setNoteText(company.note ?? "");
+                            setActiveCompany(company);
+                          }}
                         >
                           Why
                         </Button>
@@ -419,7 +643,11 @@ export function ShareClient({
                       <Button
                         variant="outline"
                         className="mt-4 w-full"
-                        onClick={() => setActiveCompany(company)}
+                        onClick={() => {
+                          setWhyText(company.why ?? "");
+                          setNoteText(company.note ?? "");
+                          setActiveCompany(company);
+                        }}
                       >
                         Why
                       </Button>
@@ -431,8 +659,81 @@ export function ShareClient({
         </div>
       )}
 
-      {/* Delete & Side Panel modals (same as before) */}
-      {/* ... your existing AnimatePresence code here ... */}
+      {/* Why dialog */}
+      <Dialog
+        open={!!activeCompany}
+        onOpenChange={(open) => {
+          if (!open) setActiveCompany(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              Why — {activeCompany?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Why</label>
+              <Textarea
+                placeholder="Why this company?"
+                value={whyText}
+                onChange={(e) => setWhyText(e.target.value)}
+                className="mt-1 min-h-20"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Note</label>
+              <Textarea
+                placeholder="Optional note"
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                className="mt-1 min-h-[60px]"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setActiveCompany(null)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={saveWhyAndNote} disabled={savingWhy}>
+              {savingWhy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {savingWhy ? " Saving…" : "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={!!companyToDelete}
+        onOpenChange={(open) => {
+          if (!open) setCompanyToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove company?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove {companyToDelete?.name} from this list? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={deleting}
+              onClick={() => companyToDelete && deleteCompanyInDB(companyToDelete.id)}
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {deleting ? " Removing…" : "Remove"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

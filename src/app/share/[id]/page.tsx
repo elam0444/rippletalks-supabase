@@ -126,11 +126,11 @@ export default async function SharePage({
     }
   }
 
-  // Only fetch target companies if user is authenticated
+  // Fetch target companies — use admin client so unauthenticated share link users can also see them
   let companies: { id: string; name: string; description?: string; why?: string; note?: string; selected?: boolean; relationship_category?: string }[] = [];
 
-  if (user) {
-    const { data, error } = await supabase
+  {
+    const { data, error } = await adminClient
       .from("target_companies")
       .select(
         `
@@ -150,7 +150,7 @@ export default async function SharePage({
             `,
       )
       .eq("client_company_id", clientCompanyId)
-      .is("deleted_at", null); // <-- exclude deleted companies
+      .is("deleted_at", null);
 
     if (error) {
       console.error("Error fetching target companies:", error);
@@ -182,6 +182,7 @@ export default async function SharePage({
       sharedContact={sharedContact}
       sharedCompany={sharedCompany}
       contactDates={contactDates}
+      token={token}
     />
   );
 }
