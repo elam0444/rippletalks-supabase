@@ -46,6 +46,16 @@ export default async function SharePage({
       .single();
 
     if (!shareLinkError && shareLink) {
+      // Check if the share link has been revoked
+      if (shareLink.revoked) {
+        return <div>This share link has been revoked.</div>;
+      }
+
+      // Check if the share link has expired
+      if (shareLink.expires_at && new Date(shareLink.expires_at) < new Date()) {
+        return <div>This share link has expired.</div>;
+      }
+
       const contactId = shareLink.permissions?.contact_id;
 
       if (contactId) {
