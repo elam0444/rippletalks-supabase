@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import {
   Check,
   Trash2,
   Building2,
-  Users,
-  Mail,
-  Phone,
-  Globe,
   Plus,
   Search,
   Loader2,
   CheckCircle2,
   ArrowLeft,
+  User,
 } from "lucide-react";
+import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +33,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -49,7 +50,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
+
+// Accessible badge colors: medium background + dark text (WCAG AA contrast)
+function getCategoryColor(categoryName: string) {
+  const colors = [
+    "bg-blue-100 text-blue-700 hover:bg-blue-100",
+    "bg-green-100 text-green-700 hover:bg-green-100",
+    "bg-purple-100 text-purple-700 hover:bg-purple-100",
+    "bg-orange-100 text-orange-700 hover:bg-orange-100",
+    "bg-pink-100 text-pink-700 hover:bg-pink-100",
+    "bg-cyan-100 text-cyan-700 hover:bg-cyan-100",
+    "bg-amber-100 text-amber-700 hover:bg-amber-100",
+    "bg-indigo-100 text-indigo-700 hover:bg-indigo-100",
+  ];
+  const hash = categoryName.split("").reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
+  return colors[Math.abs(hash) % colors.length];
+}
 
 interface Company {
   id: string;
@@ -70,19 +86,10 @@ interface Contact {
   avatar_url?: string;
 }
 
-interface SharedCompany {
-  id: string;
-  name: string;
-  logo_url?: string;
-  website?: string;
-  description?: string;
-}
-
 interface Props {
   companies: Company[];
   clientCompanyId?: string;
   sharedContact?: Contact | null;
-  sharedCompany?: SharedCompany | null;
   contactDates?: { available_date: string; is_selected: boolean }[];
   token?: string;
 }
@@ -91,7 +98,6 @@ export function ShareClient({
   companies = [],
   clientCompanyId,
   sharedContact,
-  sharedCompany,
   contactDates: initialDates = [],
   token,
 }: Props) {
@@ -120,6 +126,16 @@ export function ShareClient({
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<"tiles" | "table">("table");
+
+  // Mobile breakpoint for responsive table
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(max-width: 768px)");
+    setIsMobile(m.matches);
+    const listener = () => setIsMobile(m.matches);
+    m.addEventListener("change", listener);
+    return () => m.removeEventListener("change", listener);
+  }, []);
 
   // --- Browse Companies (from DB) ---
   const [browseOpen, setBrowseOpen] = useState(false);
@@ -275,20 +291,68 @@ export function ShareClient({
   const groupedCompanies = useMemo(() => {
     const groups: Record<string, Company[]> = {};
     companiesList.forEach((c) => {
-      const cat = c.relationship_category || "Uncategorized";
+      const cat = c.relationship_category ?? "";
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(c);
     });
     return groups;
   }, [companiesList]);
 
-  const toggleCompany = (id: string) => {
-    const newValue = !selected[id];
-    setSelected((prev) => ({ ...prev, [id]: newValue }));
-    updateSelectedInDB(id, newValue);
-  };
+  // Responsive column visibility: hide description & category on mobile
+  const responsiveColumnVisibility = useMemo(
+    (): Record<string, boolean> =>
+      isMobile ? { description: false, category: false } : {},
+    [isMobile]
+  );
+  const [userColumnVisibility, setUserColumnVisibility] = useState<
+    Record<string, boolean>
+  >({});
+  const tableColumnVisibility = useMemo(
+    () => ({ ...userColumnVisibility, ...responsiveColumnVisibility }),
+    [responsiveColumnVisibility, userColumnVisibility]
+  );
 
-  const toggleAll = () => {
+  const updateSelectedInDB = useCallback(
+    async (companyId: string, value: boolean) => {
+      try {
+        const res = token
+          ? await fetch("/api/share/update-target", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                token,
+                targetCompanyId: companyId,
+                selected: value,
+              }),
+            })
+          : await fetch("/api/target-company/update", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                clientCompanyId,
+                companyId: companyId,
+                selected: value,
+              }),
+            });
+        const data = await res.json();
+        if (!res.ok) console.error("API error:", data.error);
+      } catch (err) {
+        console.error("Unexpected API error:", err);
+      }
+    },
+    [token, clientCompanyId]
+  );
+
+  const toggleCompany = useCallback(
+    (id: string) => {
+      const newValue = !selected[id];
+      setSelected((prev) => ({ ...prev, [id]: newValue }));
+      updateSelectedInDB(id, newValue);
+    },
+    [selected, updateSelectedInDB]
+  );
+
+  const toggleAll = useCallback(() => {
     const newValue = !allSelected;
     const newSelected: Record<string, boolean> = {};
     companiesList.forEach((c) => {
@@ -296,35 +360,143 @@ export function ShareClient({
       updateSelectedInDB(c.id, newValue);
     });
     setSelected(newSelected);
-  };
+  }, [allSelected, companiesList, updateSelectedInDB]);
 
-  const updateSelectedInDB = async (companyId: string, value: boolean) => {
-    try {
-      const res = token
-        ? await fetch("/api/share/update-target", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              token,
-              targetCompanyId: companyId,
-              selected: value,
-            }),
-          })
-        : await fetch("/api/target-company/update", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              clientCompanyId,
-              companyId,
-              selected: value,
-            }),
-          });
-      const data = await res.json();
-      if (!res.ok) console.error("API error:", data.error);
-    } catch (err) {
-      console.error("Unexpected API error:", err);
-    }
-  };
+  const companiesColumns = useMemo<ColumnDef<Company, unknown>[]>(
+    () => [
+      {
+        id: "select",
+        header: () => (
+          <button
+            type='button'
+            onClick={toggleAll}
+            className='flex h-5 w-5 items-center justify-center rounded-sm border mx-auto'
+            aria-label={allSelected ? "Deselect all" : "Select all"}
+          >
+            {allSelected ? (
+              <span className='flex h-5 w-5 items-center justify-center rounded-sm border border-green-500 bg-green-500 text-white'>
+                <Check size={12} />
+              </span>
+            ) : (
+              <span className='h-5 w-5 rounded-sm border border-gray-300 bg-white' />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className='flex justify-center'>
+            <button
+              type='button'
+              onClick={() => toggleCompany(row.original.id)}
+              className={`flex h-5 w-5 items-center justify-center rounded-sm border ${
+                selected[row.original.id]
+                  ? "border-green-500 bg-green-500 text-white"
+                  : "border-gray-300 bg-white text-gray-400"
+              }`}
+              aria-label={selected[row.original.id] ? "Deselect" : "Select"}
+            >
+              {selected[row.original.id] && <Check size={12} />}
+            </button>
+          </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        id: "name",
+        accessorKey: "name",
+        header: "Company",
+        cell: ({ row }) => (
+          <span className='font-medium text-foreground wrap-break-word min-w-0'>
+            {row.original.name}
+          </span>
+        ),
+        meta: {
+          cellClassName:
+            "whitespace-normal min-w-0 max-w-[180px] sm:max-w-none",
+        },
+        enableSorting: true,
+      },
+      {
+        id: "description",
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => {
+          const d = row.original.description || "—";
+          const maxLen = 60;
+          const short = d.length > maxLen ? d.slice(0, maxLen).trim() + "…" : d;
+          return (
+            <span className='text-muted-foreground min-w-0 block max-w-[200px] truncate' title={d !== "—" ? d : undefined}>
+              {short}
+            </span>
+          );
+        },
+        meta: {
+          cellClassName: "min-w-0 max-w-[220px]",
+        },
+        enableSorting: true,
+      },
+      {
+        id: "category",
+        accessorKey: "relationship_category",
+        header: "Category",
+        cell: ({ row }) => {
+          const cat = row.original.relationship_category;
+          if (!cat) return <span className='text-muted-foreground'>—</span>;
+          return (
+            <Badge className={cn("truncate", getCategoryColor(cat))}>
+              {cat}
+            </Badge>
+          );
+        },
+        enableSorting: true,
+      },
+      {
+        id: "why",
+        header: "Why",
+        cell: ({ row }) => (
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => {
+              setWhyText(row.original.why ?? "");
+              setNoteText(row.original.note ?? "");
+              setActiveCompany(row.original);
+            }}
+          >
+            Why
+          </Button>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => setCompanyToDelete(row.original)}
+            aria-label='Remove company'
+          >
+            <Trash2 size={16} />
+          </Button>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ],
+    [
+      selected,
+      allSelected,
+      toggleCompany,
+      toggleAll,
+      setWhyText,
+      setNoteText,
+      setActiveCompany,
+      setCompanyToDelete,
+    ]
+  );
 
   const deleteCompanyInDB = async (companyId: string) => {
     setDeleting(true);
@@ -398,102 +570,218 @@ export function ShareClient({
     }
   };
 
+  const step2ToolbarButtons = (
+    <>
+      {companiesList.length > 0 && (
+        <>
+          {/* <Button variant='outline' size='sm' onClick={toggleAll}>
+            {allSelected ? "Deselect All" : "Select All"}
+          </Button> */}
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() =>
+              setViewMode(viewMode === "tiles" ? "table" : "tiles")
+            }
+          >
+            {viewMode === "tiles" ? "Table View" : "Tile View"}
+          </Button>
+        </>
+      )}
+      {token && (
+        <>
+          <Dialog open={browseOpen} onOpenChange={handleBrowseOpen}>
+            <DialogTrigger asChild>
+              <Button variant='outline' size='sm'>
+                <Search className='h-4 w-4 mr-2' />
+                Browse Companies
+              </Button>
+            </DialogTrigger>
+            <DialogContent className='sm:max-w-[700px]'>
+              <DialogHeader>
+                <DialogTitle>Browse Companies</DialogTitle>
+                <p className='text-sm text-gray-500 font-normal'>
+                  Search and add companies already in our database.
+                </p>
+              </DialogHeader>
+              <div className='space-y-4'>
+                <div className='relative'>
+                  <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
+                  <Input
+                    placeholder='Search companies...'
+                    value={browseSearch}
+                    onChange={(e) =>
+                      handleBrowseSearch(e.target.value)
+                    }
+                    className='pl-9'
+                  />
+                </div>
+                <div className='max-h-[500px] overflow-y-auto space-y-2'>
+                  {browseLoading ? (
+                    <div className='flex items-center justify-center py-8'>
+                      <Loader2 className='h-6 w-6 animate-spin text-gray-400' />
+                    </div>
+                  ) : browseResults.length === 0 ? (
+                    <p className='text-center text-gray-500 py-8'>
+                      No companies found.
+                    </p>
+                  ) : (
+                    browseResults.map((company) => (
+                      <div
+                        key={company.id}
+                        className='flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50'
+                      >
+                        <div className='flex items-center gap-3 min-w-0'>
+                          <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded bg-gray-100'>
+                            <Building2 className='h-4 w-4 text-gray-400' />
+                          </div>
+                          <div className='min-w-0'>
+                            <p className='font-medium text-gray-900 truncate'>
+                              {company.name}
+                            </p>
+                            {company.description && (
+                              <p className='text-sm text-gray-500 truncate'>
+                                {company.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size='sm'
+                          onClick={() => handleAddCompany(company.id)}
+                          disabled={addingId === company.id}
+                          className='shrink-0 ml-2'
+                        >
+                          {addingId === company.id ? (
+                            <Loader2 className='h-4 w-4 animate-spin' />
+                          ) : (
+                            <>
+                              <Plus className='h-4 w-4 mr-1' />
+                              Add
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog
+            open={addCompanyOpen}
+            onOpenChange={handleAddCompanyDialogOpen}
+          >
+            <DialogTrigger asChild>
+              <Button variant='outline' size='sm'>
+                <Plus className='h-4 w-4 mr-2' />
+                Add Company (not in list)
+              </Button>
+            </DialogTrigger>
+            <DialogContent className='sm:max-w-[440px]'>
+              <DialogHeader>
+                <DialogTitle>Add a company</DialogTitle>
+                <p className='text-sm text-gray-500 font-normal'>
+                  Add a company that isn’t in our database. Enter the name and
+                  optional description.
+                </p>
+              </DialogHeader>
+              <div className='space-y-4 pt-2'>
+                {addCompanyError && (
+                  <p className='text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2'>
+                    {addCompanyError}
+                  </p>
+                )}
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Company name
+                  </label>
+                  <Input
+                    placeholder='e.g. Acme Corp'
+                    value={newCompanyName}
+                    onChange={(e) => setNewCompanyName(e.target.value)}
+                    className='mt-1'
+                    disabled={addingCustom}
+                  />
+                </div>
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Industry (optional)
+                  </label>
+                  <Select
+                    value={newCompanyIndustryId || "__none__"}
+                    onValueChange={setNewCompanyIndustryId}
+                    disabled={addingCustom || industriesLoading}
+                  >
+                    <SelectTrigger className='mt-1'>
+                      <SelectValue
+                        placeholder={
+                          industriesLoading ? "Loading…" : "Select an industry"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='__none__'>None</SelectItem>
+                      {industries.map((industry) => (
+                        <SelectItem key={industry.id} value={industry.id}>
+                          {industry.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Description (optional)
+                  </label>
+                  <Input
+                    placeholder='Brief description'
+                    value={newCompanyDescription}
+                    onChange={(e) => setNewCompanyDescription(e.target.value)}
+                    className='mt-1'
+                    disabled={addingCustom}
+                  />
+                </div>
+                <div className='flex justify-end gap-2 pt-2'>
+                  <Button
+                    variant='outline'
+                    onClick={() => setAddCompanyOpen(false)}
+                    disabled={addingCustom}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAddCustomCompany}
+                    disabled={addingCustom || !newCompanyName.trim()}
+                  >
+                    {addingCustom ? (
+                      <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                    ) : (
+                      <Plus className='h-4 w-4 mr-2' />
+                    )}
+                    {addingCustom ? "Adding…" : "Add company"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+    </>
+  );
+
   return (
     <div className='max-w-6xl mx-auto p-6 space-y-6'>
       {/* Shared Contact Info */}
-      {sharedContact && sharedCompany && (
+      {sharedContact && (
         <div className='bg-white border rounded-lg p-6 shadow-sm'>
-          <h2 className='text-lg font-semibold text-gray-900 mb-4'>
-            Shared Contact
-          </h2>
-          <div className='flex items-start gap-6'>
-            {/* Contact Info */}
-            <div className='flex-1'>
-              <div className='flex items-center gap-3 mb-3'>
-                {sharedContact.avatar_url ? (
-                  <Image
-                    src={sharedContact.avatar_url}
-                    alt={sharedContact.name}
-                    width={48}
-                    height={48}
-                    className='h-12 w-12 rounded-full object-cover'
-                  />
-                ) : (
-                  <div className='flex h-12 w-12 items-center justify-center rounded-full bg-gray-100'>
-                    <Users className='h-6 w-6 text-gray-400' />
-                  </div>
-                )}
-                <div>
-                  <h3 className='text-xl font-bold text-gray-900'>
-                    {sharedContact.name}
-                  </h3>
-                  {sharedContact.title && (
-                    <p className='text-sm text-gray-600'>
-                      {sharedContact.title}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className='space-y-2 ml-15'>
-                {sharedContact.email && (
-                  <div className='flex items-center gap-2 text-sm'>
-                    <Mail className='h-4 w-4 text-gray-400' />
-                    <a
-                      href={`mailto:${sharedContact.email}`}
-                      className='text-blue-600 hover:underline'
-                    >
-                      {sharedContact.email}
-                    </a>
-                  </div>
-                )}
-                {sharedContact.phone && (
-                  <div className='flex items-center gap-2 text-sm'>
-                    <Phone className='h-4 w-4 text-gray-400' />
-                    <span className='text-gray-700'>{sharedContact.phone}</span>
-                  </div>
-                )}
-              </div>
+          <div className='flex items-center gap-3'>
+            <div className='flex h-12 w-12 items-center justify-center rounded-full bg-gray-100'>
+              <User className='h-6 w-6 text-gray-400' />
             </div>
-
-            {/* Company Info */}
-            <div className='flex-1 border-l pl-6'>
-              <div className='flex items-center gap-3 mb-3'>
-                {sharedCompany.logo_url ? (
-                  <Image
-                    src={sharedCompany.logo_url}
-                    alt={sharedCompany.name}
-                    width={48}
-                    height={48}
-                    className='h-12 w-12 rounded object-cover'
-                  />
-                ) : (
-                  <div className='flex h-12 w-12 items-center justify-center rounded bg-gray-100'>
-                    <Building2 className='h-6 w-6 text-gray-400' />
-                  </div>
-                )}
-                <div>
-                  <h3 className='text-xl font-bold text-gray-900'>
-                    {sharedCompany.name}
-                  </h3>
-                  {sharedCompany.website && (
-                    <a
-                      href={sharedCompany.website}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='text-sm text-blue-600 hover:underline flex items-center gap-1'
-                    >
-                      <Globe className='h-3 w-3' />
-                      Website
-                    </a>
-                  )}
-                </div>
-              </div>
-              {sharedCompany.description && (
-                <p className='text-sm text-gray-600 ml-15'>
-                  {sharedCompany.description}
-                </p>
-              )}
-            </div>
+            <h2 className='text-lg font-semibold text-gray-900'>
+              Welcome, {sharedContact.name}!
+            </h2>
           </div>
         </div>
       )}
@@ -575,367 +863,126 @@ export function ShareClient({
                   Key Stakeholder Opportunities
                 </CardTitle>
                 <CardDescription className='text-base text-gray-600'>
-                  Uncheck companies you&apos;d rather pass on, or add new companies
-                  you want to connect with.
+                  Uncheck companies you&apos;d rather pass on, or add new
+                  companies you want to connect with.
                 </CardDescription>
               </CardHeader>
               <CardContent className='space-y-6'>
-                <div className='flex flex-wrap gap-2'>
-                  {companiesList.length > 0 && (
-                  <>
-                    <Button
-                      variant='outline'
-                      className='border-black text-black bg-white hover:bg-gray-100'
-                      onClick={toggleAll}
-                    >
-                      {allSelected ? "Deselect All" : "Select All"}
-                    </Button>
-                    <Button
-                      variant='outline'
-                      className='border-black text-black bg-white hover:bg-gray-100'
-                      onClick={() =>
-                        setViewMode(viewMode === "tiles" ? "table" : "tiles")
+                {/* Table or Tiles View */}
+                {viewMode === "table" && (
+                  <div className='-mx-2 sm:mx-0 overflow-x-auto'>
+                    <DataTable<Company, unknown>
+                      columns={companiesColumns}
+                      data={companiesList}
+                      // searchColumn="name"
+                      // searchPlaceholder="Search companies..."
+                      defaultPageSize={10}
+                      pageSizeOptions={[5, 10, 25, 50]}
+                      columnVisibility={tableColumnVisibility}
+                      onColumnVisibilityChange={(updater) => {
+                        setUserColumnVisibility(updater(tableColumnVisibility));
+                      }}
+                      toolbarExtra={
+                        <div className='flex flex-wrap items-center gap-2'>
+                          {step2ToolbarButtons}
+                        </div>
                       }
-                    >
-                      {viewMode === "tiles" ? "Table View" : "Tile View"}
-                    </Button>
-                  </>
-                )}
-                {token && (
-                  <>
-                    <Dialog open={browseOpen} onOpenChange={handleBrowseOpen}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant='outline'
-                          className='border-black text-black bg-white hover:bg-gray-100'
-                        >
-                          <Search className='h-4 w-4 mr-2' />
-                          Browse Companies
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className='sm:max-w-[700px]'>
-                        <DialogHeader>
-                          <DialogTitle>Browse Companies</DialogTitle>
-                          <p className='text-sm text-gray-500 font-normal'>
-                            Search and add companies already in our database.
-                          </p>
-                        </DialogHeader>
-                        <div className='space-y-4'>
-                          <div className='relative'>
-                            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
-                            <Input
-                              placeholder='Search companies...'
-                              value={browseSearch}
-                              onChange={(e) =>
-                                handleBrowseSearch(e.target.value)
-                              }
-                              className='pl-9'
-                            />
-                          </div>
-                          <div className='max-h-[500px] overflow-y-auto space-y-2'>
-                            {browseLoading ? (
-                              <div className='flex items-center justify-center py-8'>
-                                <Loader2 className='h-6 w-6 animate-spin text-gray-400' />
-                              </div>
-                            ) : browseResults.length === 0 ? (
-                              <p className='text-center text-gray-500 py-8'>
-                                No companies found.
-                              </p>
-                            ) : (
-                              browseResults.map((company) => (
-                                <div
-                                  key={company.id}
-                                  className='flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50'
-                                >
-                                  <div className='flex items-center gap-3 min-w-0'>
-                                    <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded bg-gray-100'>
-                                      <Building2 className='h-4 w-4 text-gray-400' />
-                                    </div>
-                                    <div className='min-w-0'>
-                                      <p className='font-medium text-gray-900 truncate'>
-                                        {company.name}
-                                      </p>
-                                      {company.description && (
-                                        <p className='text-sm text-gray-500 truncate'>
-                                          {company.description}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <Button
-                                    size='sm'
-                                    onClick={() => handleAddCompany(company.id)}
-                                    disabled={addingId === company.id}
-                                    className='shrink-0 ml-2'
-                                  >
-                                    {addingId === company.id ? (
-                                      <Loader2 className='h-4 w-4 animate-spin' />
-                                    ) : (
-                                      <>
-                                        <Plus className='h-4 w-4 mr-1' />
-                                        Add
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <Dialog
-                      open={addCompanyOpen}
-                      onOpenChange={handleAddCompanyDialogOpen}
-                    >
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className='h-4 w-4 mr-2' />
-                          Add Company (not in list)
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className='sm:max-w-[440px]'>
-                        <DialogHeader>
-                          <DialogTitle>Add a company</DialogTitle>
-                          <p className='text-sm text-gray-500 font-normal'>
-                            Add a company that isn’t in our database. Enter the
-                            name and optional description.
-                          </p>
-                        </DialogHeader>
-                        <div className='space-y-4 pt-2'>
-                          {addCompanyError && (
-                            <p className='text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2'>
-                              {addCompanyError}
-                            </p>
-                          )}
-                          <div>
-                            <label className='text-sm font-medium text-gray-700'>
-                              Company name
-                            </label>
-                            <Input
-                              placeholder='e.g. Acme Corp'
-                              value={newCompanyName}
-                              onChange={(e) =>
-                                setNewCompanyName(e.target.value)
-                              }
-                              className='mt-1'
-                              disabled={addingCustom}
-                            />
-                          </div>
-                          <div>
-                            <label className='text-sm font-medium text-gray-700'>
-                              Industry (optional)
-                            </label>
-                            <Select
-                              value={newCompanyIndustryId || "__none__"}
-                              onValueChange={setNewCompanyIndustryId}
-                              disabled={addingCustom || industriesLoading}
-                            >
-                              <SelectTrigger className='mt-1'>
-                                <SelectValue
-                                  placeholder={
-                                    industriesLoading
-                                      ? "Loading…"
-                                      : "Select an industry"
-                                  }
-                                />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value='__none__'>None</SelectItem>
-                                {industries.map((industry) => (
-                                  <SelectItem
-                                    key={industry.id}
-                                    value={industry.id}
-                                  >
-                                    {industry.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <label className='text-sm font-medium text-gray-700'>
-                              Description (optional)
-                            </label>
-                            <Input
-                              placeholder='Brief description'
-                              value={newCompanyDescription}
-                              onChange={(e) =>
-                                setNewCompanyDescription(e.target.value)
-                              }
-                              className='mt-1'
-                              disabled={addingCustom}
-                            />
-                          </div>
-                          <div className='flex justify-end gap-2 pt-2'>
-                            <Button
-                              variant='outline'
-                              onClick={() => setAddCompanyOpen(false)}
-                              disabled={addingCustom}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={handleAddCustomCompany}
-                              disabled={addingCustom || !newCompanyName.trim()}
-                            >
-                              {addingCustom ? (
-                                <Loader2 className='h-4 w-4 animate-spin mr-2' />
-                              ) : (
-                                <Plus className='h-4 w-4 mr-2' />
-                              )}
-                              {addingCustom ? "Adding…" : "Add company"}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </>
-                )}
-              </div>
-
-            {/* Table or Tiles View */}
-            {viewMode === "table" && (
-              <div className='overflow-x-auto mt-4'>
-                <table className='w-full table-auto border-collapse border border-gray-200'>
-                  <thead>
-                    <tr className='bg-gray-100'>
-                      <th className='border p-2 w-12'></th>
-                      <th className='border p-2 text-left'>Company</th>
-                      <th className='border p-2 text-left'>Description</th>
-                      <th className='border p-2 text-left'>Category</th>
-                      <th className='border p-2 text-left'>Why</th>
-                      <th className='border p-2 text-left'>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {companiesList.map((company) => (
-                      <tr key={company.id} className='hover:bg-gray-50'>
-                        <td className='border p-2 text-center'>
-                          <button
-                            onClick={() => toggleCompany(company.id)}
-                            className={`w-5 h-5 rounded-sm border flex items-center justify-center mx-auto ${
-                              selected[company.id]
-                                ? "bg-green-500 border-green-500 text-white"
-                                : "bg-white border-gray-300 text-gray-400"
-                            }`}
-                          >
-                            {selected[company.id] && <Check size={12} />}
-                          </button>
-                        </td>
-                        <td className='border p-2'>{company.name}</td>
-                        <td className='border p-2'>
-                          {company.description || "—"}
-                        </td>
-                        <td className='border p-2'>
-                          {company.relationship_category || "—"}
-                        </td>
-                        <td className='border p-2'>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() => {
-                              setWhyText(company.why ?? "");
-                              setNoteText(company.note ?? "");
-                              setActiveCompany(company);
-                            }}
-                          >
-                            Why
-                          </Button>
-                        </td>
-                        <td className='border p-2'>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() => setCompanyToDelete(company)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {viewMode === "tiles" &&
-              Object.entries(groupedCompanies).map(([category, companies]) => (
-                <div key={category} className='space-y-4 mt-4'>
-                  <h2 className='text-xl font-bold text-gray-700'>
-                    {category}
-                  </h2>
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    {companies.map((company) => (
-                      <div
-                        key={company.id}
-                        className='relative flex flex-col p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white'
-                      >
-                        <Button
-                          variant='outline'
-                          size='icon'
-                          className='absolute top-2 right-2'
-                          onClick={() => setCompanyToDelete(company)}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                        <div className='flex items-start space-x-4'>
-                          <button
-                            onClick={() => toggleCompany(company.id)}
-                            className={`w-5 h-5 rounded-sm border flex items-center justify-center mt-1 ${
-                              selected[company.id]
-                                ? "bg-green-500 border-green-500 text-white"
-                                : "bg-white border-gray-300 text-gray-400"
-                            }`}
-                          >
-                            {selected[company.id] && <Check size={12} />}
-                          </button>
-                          <div className='flex-1'>
-                            <p className='font-semibold text-gray-800'>
-                              {company.name}
-                            </p>
-                            {company.description && (
-                              <p className='mt-1 text-sm text-gray-500'>
-                                {company.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          variant='outline'
-                          className='mt-4 w-full'
-                          onClick={() => {
-                            setWhyText(company.why ?? "");
-                            setNoteText(company.note ?? "");
-                            setActiveCompany(company);
-                          }}
-                        >
-                          Why
-                        </Button>
-                      </div>
-                    ))}
+                      hideViewButton
+                    />
                   </div>
-                </div>
-              ))}
+                )}
 
-            {/* Step 2 footer: Done / Back */}
-            <div className='mt-8 pt-6 border-t border-gray-200 flex flex-wrap justify-between items-center gap-4'>
-              <Button
-                variant='outline'
-                onClick={() => setStep(1)}
-                className='border-gray-300'
-              >
-                <ArrowLeft className='h-4 w-4 mr-2' />
-                Back to dates
-              </Button>
-              <Button
-                onClick={() => setStep(3)}
-                className='bg-green-600 hover:bg-green-700'
-              >
-                <CheckCircle2 className='h-4 w-4 mr-2' />
-                Done!
-              </Button>
-            </div>
+                {viewMode === "tiles" && (
+                  <>
+                    <div className='flex flex-wrap gap-2'>
+                      {step2ToolbarButtons}
+                    </div>
+                    {Object.entries(groupedCompanies).map(
+                      ([category, companies]) => (
+                        <div key={category || "__no_category__"} className='space-y-4 mt-4'>
+                          {category ? (
+                            <h2 className='text-xl font-bold text-gray-700'>
+                              {category}
+                            </h2>
+                          ) : (
+                            <div className='h-7' aria-hidden />
+                          )}
+                          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            {companies.map((company) => (
+                              <div
+                                key={company.id}
+                                className='relative flex flex-col p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white'
+                              >
+                                <Button
+                                  variant='outline'
+                                  size='icon'
+                                  className='absolute top-2 right-2'
+                                  onClick={() => setCompanyToDelete(company)}
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                                <div className='flex items-start space-x-4'>
+                                  <button
+                                    onClick={() => toggleCompany(company.id)}
+                                    className={`w-5 h-5 rounded-sm border flex items-center justify-center mt-1 ${
+                                      selected[company.id]
+                                        ? "bg-green-500 border-green-500 text-white"
+                                        : "bg-white border-gray-300 text-gray-400"
+                                    }`}
+                                  >
+                                    {selected[company.id] && (
+                                      <Check size={12} />
+                                    )}
+                                  </button>
+                                  <div className='flex-1'>
+                                    <p className='font-semibold text-gray-800'>
+                                      {company.name}
+                                    </p>
+                                    {company.description && (
+                                      <p className='mt-1 text-sm text-gray-500'>
+                                        {company.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  variant='outline'
+                                  className='mt-4 w-full'
+                                  onClick={() => {
+                                    setWhyText(company.why ?? "");
+                                    setNoteText(company.note ?? "");
+                                    setActiveCompany(company);
+                                  }}
+                                >
+                                  Why
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </>
+                )}
+
+                {/* Step 2 footer: Done / Back */}
+                <div className='mt-8 pt-6 border-t border-gray-200 flex flex-wrap justify-between items-center gap-4'>
+                  <Button
+                    variant='outline'
+                    onClick={() => setStep(1)}
+                    className='border-gray-300'
+                  >
+                    <ArrowLeft className='h-4 w-4 mr-2' />
+                    Back to dates
+                  </Button>
+                  <Button
+                    onClick={() => setStep(3)}
+                    className='bg-green-600 hover:bg-green-700'
+                  >
+                    <CheckCircle2 className='h-4 w-4 mr-2' />
+                    Done!
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
