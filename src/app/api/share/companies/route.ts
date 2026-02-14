@@ -43,6 +43,16 @@ export async function GET(req: NextRequest) {
     const targetedIds = existingTargets?.map((t) => t.target_company_id) || [];
     const excludeIds = [...targetedIds, clientCompanyId];
 
+    console.log("[API /share/companies] Excluding IDs:", excludeIds);
+
+    // First, check total companies count
+    const { count: totalCount } = await adminClient
+      .from("companies")
+      .select("*", { count: "exact", head: true })
+      .is("deleted_at", null);
+
+    console.log("[API /share/companies] Total companies in DB:", totalCount);
+
     // Fetch available companies
     let query = adminClient
       .from("companies")
@@ -61,8 +71,11 @@ export async function GET(req: NextRequest) {
     const { data: companies, error } = await query;
 
     if (error) {
+      console.error("[API /share/companies] Query error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    console.log("[API /share/companies] Found companies:", companies?.length || 0);
 
     return NextResponse.json({ companies: companies || [] });
   } catch (err) {

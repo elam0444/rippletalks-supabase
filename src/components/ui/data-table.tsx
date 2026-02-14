@@ -62,7 +62,7 @@ interface DataTableProps<TData, TValue> {
   /** Controlled column visibility (e.g. responsive visibility) */
   columnVisibility?: VisibilityState;
   onColumnVisibilityChange?: (
-    updater: (old: VisibilityState) => VisibilityState
+    updater: VisibilityState | ((old: VisibilityState) => VisibilityState)
   ) => void;
   /** Extra content (e.g. filter buttons) to show in the toolbar next to search */
   toolbarExtra?: React.ReactNode;
@@ -94,7 +94,13 @@ export function DataTable<TData, TValue>({
     controlledVisibility !== undefined
       ? controlledVisibility
       : internalVisibility;
-  const setColumnVisibility = onColumnVisibilityChange ?? setInternalVisibility;
+  const setColumnVisibility = onColumnVisibilityChange
+    ? (updater: VisibilityState | ((old: VisibilityState) => VisibilityState)) => {
+        const newValue =
+          typeof updater === "function" ? updater(columnVisibility) : updater;
+        onColumnVisibilityChange(newValue);
+      }
+    : setInternalVisibility;
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: defaultPageSize,

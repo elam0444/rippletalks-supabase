@@ -16,13 +16,6 @@ interface Props {
   companies: Company[];
   clientCompanyId?: string;
   sharedContact?: Contact | null;
-  sharedCompany?: {
-    id: string;
-    name: string;
-    logo_url?: string;
-    website?: string;
-    description?: string;
-  } | null;
   contactDates?: ContactDate[];
   token?: string;
 }
@@ -31,7 +24,6 @@ export function ShareClient({
   companies = [],
   clientCompanyId,
   sharedContact,
-  sharedCompany, // Accept but not used (for backward compatibility)
   contactDates: initialDates = [],
   token,
 }: Props) {
