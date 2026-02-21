@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { ShareClient } from "@/components/share/share-client";
 
@@ -28,13 +29,16 @@ export default async function SharePage({
   // Only require login if there's no token (accessing without a share link)
   if (!user && !token) redirect("/login");
 
+  // Use admin client for share link queries so unauthenticated users can access
+  const adminClient = createAdminClient();
+
   // If there's a token, fetch the share link and contact information
   let sharedContact = null;
   let sharedCompany = null;
   let contactDates: { available_date: string; is_selected: boolean }[] = [];
 
   if (token) {
-    const { data: shareLink, error: shareLinkError } = await supabase
+    const { data: shareLink, error: shareLinkError } = await adminClient
       .from("share_links")
       .select("*")
       .eq("link_token", token)
@@ -42,11 +46,21 @@ export default async function SharePage({
       .single();
 
     if (!shareLinkError && shareLink) {
+      // Check if the share link has been revoked
+      if (shareLink.revoked) {
+        return <div>This share link has been revoked.</div>;
+      }
+
+      // Check if the share link has expired
+      if (shareLink.expires_at && new Date(shareLink.expires_at) < new Date()) {
+        return <div>This share link has expired.</div>;
+      }
+
       const contactId = shareLink.permissions?.contact_id;
 
       if (contactId) {
         // Fetch contact details
-        const { data: contact } = await supabase
+        const { data: contact } = await adminClient
           .from("contacts")
           .select(
             `
@@ -79,30 +93,32 @@ export default async function SharePage({
             avatar_url: contact.avatar_url,
           };
 
-          const { data, error } = await supabase
+          const { data, error } = await adminClient
             .from("contact_available_dates")
-            .select("available_date")
+            .select("available_date, is_selected")
             .eq("contact_id", sharedContact.id)
             .order("available_date", { ascending: true });
 
           if (error) {
             console.error("Error fetching contact dates:", error);
           } else if (data) {
-            contactDates = (data || []).map((d: any) => ({
+            contactDates = (data || []).map((d: { available_date: string; is_selected: boolean }) => ({
               available_date: d.available_date,
-              is_selected: false,
+              is_selected: d.is_selected ?? false,
             }));
           }
 
           // Supabase returns the relation as a single object, not an array
-          const company = contact.companies as any;
-          if (company) {
+          const companyData = Array.isArray(contact.companies)
+            ? contact.companies[0]
+            : contact.companies;
+          if (companyData) {
             sharedCompany = {
-              id: company.id,
-              name: company.name,
-              logo_url: company.logo_url,
-              website: company.website,
-              description: company.description,
+              id: companyData.id,
+              name: companyData.name,
+              logo_url: companyData.logo_url ?? undefined,
+              website: companyData.website ?? undefined,
+              description: companyData.description ?? undefined,
             };
           }
         }
@@ -110,11 +126,11 @@ export default async function SharePage({
     }
   }
 
-  // Only fetch target companies if user is authenticated
-  let companies: any[] = [];
+  // Fetch target companies — use admin client so unauthenticated share link users can also see them
+  let companies: { id: string; name: string; description?: string; why?: string; note?: string; selected?: boolean; relationship_category?: string }[] = [];
 
-  if (user) {
-    const { data, error } = await supabase
+  {
+    const { data, error } = await adminClient
       .from("target_companies")
       .select(
         `
@@ -134,21 +150,28 @@ export default async function SharePage({
             `,
       )
       .eq("client_company_id", clientCompanyId)
-      .is("deleted_at", null); // <-- exclude deleted companies
+      .is("deleted_at", null);
 
     if (error) {
       console.error("Error fetching target companies:", error);
     } else {
-      companies = (data || []).map((item: any) => ({
-        id: String(item.companies.id),
-        name: item.companies.name,
-        description: item.companies.description,
-        why: item.why,
-        note: item.note,
-        selected: item.selected,
-        relationship_category:
-          item.relationship_category?.name || "Uncategorized",
-      }));
+      companies = (data || []).map((item) => {
+        const comp = Array.isArray(item.companies)
+          ? item.companies[0]
+          : item.companies;
+        const cat = Array.isArray(item.relationship_category)
+          ? item.relationship_category[0]
+          : item.relationship_category;
+        return {
+          id: String(comp?.id),
+          name: comp?.name ?? "",
+          description: comp?.description ?? undefined,
+          why: item.why ?? undefined,
+          note: item.note ?? undefined,
+          selected: item.selected ?? undefined,
+          relationship_category: cat?.name ?? "Uncategorized",
+        };
+      });
     }
   }
 
@@ -159,6 +182,7 @@ export default async function SharePage({
       sharedContact={sharedContact}
       sharedCompany={sharedCompany}
       contactDates={contactDates}
+      token={token}
     />
   );
 }

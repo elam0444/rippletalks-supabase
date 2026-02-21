@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { Loader2, Share2, Copy, Check } from "lucide-react"
+import { Loader2, Share2, Copy, Check, AlertCircle } from "lucide-react"
 
 interface ShareContactButtonProps {
   contactId: string
@@ -30,11 +30,24 @@ export function ShareContactButton({
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [isExistingLink, setIsExistingLink] = useState(false)
+  const [noDatesError, setNoDatesError] = useState(false)
 
   async function handleGenerateLink() {
     setIsGenerating(true)
+    setNoDatesError(false)
 
     try {
+      // Check if the contact has any available dates set before generating the link
+      const datesRes = await fetch(`/api/share/contact-dates?contactId=${contactId}`)
+      if (datesRes.ok) {
+        const datesData = await datesRes.json()
+        if (!datesData.hasDates) {
+          setNoDatesError(true)
+          setIsGenerating(false)
+          return
+        }
+      }
+
       const res = await fetch("/api/share/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -89,6 +102,7 @@ export function ShareContactButton({
       setShareUrl(null)
       setCopied(false)
       setIsExistingLink(false)
+      setNoDatesError(false)
     }
   }
 
@@ -116,6 +130,14 @@ export function ShareContactButton({
             <div className="flex flex-col items-center justify-center py-8 space-y-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Loading share link...</p>
+            </div>
+          ) : noDatesError ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-3 text-center">
+              <AlertCircle className="h-8 w-8 text-amber-500" />
+              <p className="text-sm font-medium">No dates set for {contactName}</p>
+              <p className="text-sm text-muted-foreground">
+                You must add at least one available date before sharing this contact. Use the <strong>Dates</strong> button to set dates first.
+              </p>
             </div>
           ) : shareUrl ? (
             <div className="space-y-4">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,19 +21,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get the user's profile
-    const { data: profile } = await supabase
+    // Use admin client for database operations to bypass RLS
+    const adminClient = createAdminClient();
+
+    // Get or create the user's profile
+    let { data: profile } = await adminClient
       .from("profiles")
       .select("id")
       .eq("id", user.id)
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      // Auto-create profile for authenticated users that don't have one yet
+      const { data: newProfile, error: profileError } = await adminClient
+        .from("profiles")
+        .insert({
+          id: user.id,
+          full_name: user.user_metadata?.full_name || user.email || null,
+        })
+        .select("id")
+        .single();
+
+      if (profileError || !newProfile) {
+        console.error("Profile creation error:", profileError);
+        return NextResponse.json({ error: "Failed to create profile" }, { status: 500 });
+      }
+
+      profile = newProfile;
     }
 
     // Verify the contact exists and belongs to the specified company
-    const { data: contact, error: contactError } = await supabase
+    const { data: contact, error: contactError } = await adminClient
       .from("contacts")
       .select("id, company_id")
       .eq("id", contactId)
@@ -44,7 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if a share link already exists for this contact
-    const { data: existingLinks } = await supabase
+    const { data: existingLinks } = await adminClient
       .from("share_links")
       .select("*")
       .eq("company_id", companyId)
@@ -55,23 +74,21 @@ export async function POST(req: NextRequest) {
     let existingLink = null;
     if (existingLinks && existingLinks.length > 0) {
       existingLink = existingLinks.find(
-        (link: any) => link.permissions?.contact_id === contactId
+        (link: { permissions?: { contact_id?: string } }) => link.permissions?.contact_id === contactId
       );
     }
 
     let linkToken: string;
-    let shareLink: any;
 
     if (existingLink) {
       // Return the existing link
       linkToken = existingLink.link_token;
-      shareLink = existingLink;
     } else {
       // Generate a new unique token
       linkToken = crypto.randomUUID();
 
       // Create a new share link for this contact
-      const { data: newShareLink, error: shareLinkError } = await supabase
+      const { error: shareLinkError } = await adminClient
         .from("share_links")
         .insert({
           profile_id: profile.id,
@@ -90,7 +107,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: shareLinkError.message }, { status: 500 });
       }
 
-      shareLink = newShareLink;
     }
 
     // Generate the share URL
