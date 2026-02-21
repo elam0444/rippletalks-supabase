@@ -1,161 +1,100 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { AnimatePresence } from "framer-motion";
-import { ContactWelcomeCard } from "./shared/contact-welcome-card";
-import { DateSelectionStep } from "./steps/date-selection-step";
-import { CompanySelectionStep } from "./steps/company-selection-step";
-import { ConfirmationStep } from "./steps/confirmation-step";
-import { WhyNoteDialog } from "./company/why-note-dialog";
-import { DeleteCompanyDialog } from "./company/delete-company-dialog";
-import { BrowseCompaniesDialog } from "./company/browse-companies-dialog";
-import { AddCompanyDialog } from "./company/add-company-dialog";
-import type { Company, Contact, ContactDate } from "@/types/share";
+import { useState, useMemo } from "react";
+import {
+  Check,
+  Trash2,
+  Building2,
+  Users,
+  Mail,
+  Phone,
+  Globe,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
+
+interface Company {
+  id: string;
+  name: string;
+  description?: string;
+  why?: string;
+  note?: string;
+  selected?: boolean;
+  relationship_category?: string;
+}
+
+interface Contact {
+  id: string;
+  name: string;
+  email?: string;
+  title?: string;
+  phone?: string;
+  avatar_url?: string;
+}
+
+interface SharedCompany {
+  id: string;
+  name: string;
+  logo_url?: string;
+  website?: string;
+  description?: string;
+}
 
 interface Props {
   companies: Company[];
   clientCompanyId?: string;
   sharedContact?: Contact | null;
-  sharedCompany?: {
-    id: string;
-    name: string;
-    logo_url?: string;
-    website?: string;
-    description?: string;
-  } | null;
-  contactDates?: ContactDate[];
-  token?: string;
+  sharedCompany?: SharedCompany | null;
+  contactDates?: { available_date: string; is_selected: boolean }[];
 }
 
 export function ShareClient({
   companies = [],
   clientCompanyId,
   sharedContact,
+  sharedCompany,
   contactDates: initialDates = [],
-  token,
 }: Props) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
 
   // --- Step 1: Contact Dates ---
   const [dates, setDates] = useState(initialDates);
-
-  const toggleDate = useCallback(
-    async (date: string) => {
-      const current = dates.find((d) => d.available_date === date);
-      if (!current) return;
-      const newValue = !current.is_selected;
-
-      // Optimistically update UI
-      setDates((prev) =>
-        prev.map((d) =>
-          d.available_date === date ? { ...d, is_selected: newValue } : d,
-        ),
-      );
-
-      if (token) {
-        try {
-          const res = await fetch("/api/share/update-date", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              token,
-              availableDate: date,
-              isSelected: newValue,
-            }),
-          });
-          if (!res.ok) {
-            const data = await res.json();
-            console.error("API error:", data.error);
-            // Revert on failure
-            setDates((prev) =>
-              prev.map((d) =>
-                d.available_date === date ? { ...d, is_selected: !newValue } : d,
-              ),
-            );
-          }
-        } catch (err) {
-          console.error("Unexpected API error:", err);
-          // Revert on failure
-          setDates((prev) =>
-            prev.map((d) =>
-              d.available_date === date ? { ...d, is_selected: !newValue } : d,
-            ),
-          );
-        }
-      }
-    },
-    [dates, token],
-  );
+  const toggleDate = (date: string) => {
+    setDates((prev) =>
+      prev.map((d) =>
+        d.available_date === date ? { ...d, is_selected: !d.is_selected } : d,
+      ),
+    );
+  };
 
   // --- Step 2: Companies ---
   const [selected, setSelected] = useState<Record<string, boolean>>(
     Object.fromEntries(companies.map((c) => [c.id, c.selected ?? true])),
   );
   const [companiesList, setCompaniesList] = useState(companies);
+  const allSelected = companiesList.every((c) => selected[c.id]);
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<"tiles" | "table">("table");
 
-  // Mobile breakpoint for responsive table
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const m = window.matchMedia("(max-width: 768px)");
-    setIsMobile(m.matches);
-    const listener = () => setIsMobile(m.matches);
-    m.addEventListener("change", listener);
-    return () => m.removeEventListener("change", listener);
-  }, []);
+  const groupedCompanies = useMemo(() => {
+    const groups: Record<string, Company[]> = {};
+    companiesList.forEach((c) => {
+      const cat = c.relationship_category || "Uncategorized";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(c);
+    });
+    return groups;
+  }, [companiesList]);
 
-  // --- Browse Companies Dialog ---
-  const [browseOpen, setBrowseOpen] = useState(false);
+  const toggleCompany = (id: string) => {
+    const newValue = !selected[id];
+    setSelected((prev) => ({ ...prev, [id]: newValue }));
+    updateSelectedInDB(id, newValue);
+  };
 
-  // --- Add Company Dialog ---
-  const [addCompanyOpen, setAddCompanyOpen] = useState(false);
-
-  // --- API: Update Selected Status ---
-  const updateSelectedInDB = useCallback(
-    async (companyId: string, value: boolean) => {
-      try {
-        const res = token
-          ? await fetch("/api/share/update-target", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                token,
-                targetCompanyId: companyId,
-                selected: value,
-              }),
-            })
-          : await fetch("/api/target-company/update", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                clientCompanyId,
-                companyId: companyId,
-                selected: value,
-              }),
-            });
-        const data = await res.json();
-        if (!res.ok) console.error("API error:", data.error);
-      } catch (err) {
-        console.error("Unexpected API error:", err);
-      }
-    },
-    [token, clientCompanyId],
-  );
-
-  const toggleCompany = useCallback(
-    (id: string) => {
-      const newValue = !selected[id];
-      setSelected((prev) => ({ ...prev, [id]: newValue }));
-      updateSelectedInDB(id, newValue);
-    },
-    [selected, updateSelectedInDB],
-  );
-
-  const toggleAll = useCallback(() => {
-    const allSelected = companiesList.every((c) => selected[c.id]);
+  const toggleAll = () => {
     const newValue = !allSelected;
     const newSelected: Record<string, boolean> = {};
     companiesList.forEach((c) => {
@@ -163,54 +102,29 @@ export function ShareClient({
       updateSelectedInDB(c.id, newValue);
     });
     setSelected(newSelected);
-  }, [companiesList, selected, updateSelectedInDB]);
+  };
 
-  // --- API: Add Company from Browse ---
-  const handleAddCompanyFromBrowse = async (companyId: string) => {
-    if (!token) return;
+  const updateSelectedInDB = async (companyId: string, value: boolean) => {
     try {
-      const res = await fetch("/api/share/add-target", {
+      const res = await fetch("/api/target-company/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, targetCompanyId: companyId }),
+        body: JSON.stringify({ clientCompanyId, companyId, selected: value }),
       });
       const data = await res.json();
-      if (res.ok && data.company) {
-        const newCompany: Company = {
-          id: data.company.id,
-          name: data.company.name,
-          description: data.company.description,
-          selected: true,
-        };
-        setCompaniesList((prev) => [...prev, newCompany]);
-        setSelected((prev) => ({ ...prev, [data.company.id]: true }));
-      }
+      if (!res.ok) console.error("API error:", data.error);
     } catch (err) {
-      console.error("Error adding company:", err);
+      console.error("Unexpected API error:", err);
     }
   };
 
-  // --- API: Add Custom Company ---
-  const handleAddCustomCompany = (company: Company) => {
-    setCompaniesList((prev) => [...prev, company]);
-    setSelected((prev) => ({ ...prev, [company.id]: true }));
-  };
-
-  // --- API: Delete Company ---
   const deleteCompanyInDB = async (companyId: string) => {
-    setDeleting(true);
     try {
-      const res = token
-        ? await fetch("/api/share/delete-target", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token, targetCompanyId: companyId }),
-          })
-        : await fetch("/api/target-company/delete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ clientCompanyId, companyId }),
-          });
+      const res = await fetch("/api/target-company/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientCompanyId, companyId }),
+      });
       const data = await res.json();
       if (!res.ok) console.error("API error:", data.error);
       else {
@@ -219,125 +133,306 @@ export function ShareClient({
       }
     } catch (err) {
       console.error("Unexpected API error:", err);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  // --- API: Save Why and Note ---
-  const saveWhyAndNote = async (why: string, note: string) => {
-    if (!activeCompany) return;
-    try {
-      const res = token
-        ? await fetch("/api/share/update-target", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              token,
-              targetCompanyId: activeCompany.id,
-              why,
-              note,
-            }),
-          })
-        : await fetch("/api/target-company/update", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              clientCompanyId,
-              companyId: activeCompany.id,
-              why,
-              note,
-            }),
-          });
-      const data = await res.json();
-      if (res.ok) {
-        setCompaniesList((prev) =>
-          prev.map((c) =>
-            c.id === activeCompany.id ? { ...c, why, note } : c,
-          ),
-        );
-      } else {
-        console.error("API error:", data.error);
-      }
-    } catch (err) {
-      console.error("Unexpected API error:", err);
     }
   };
 
   return (
-    <div className='max-w-6xl mx-auto p-6 space-y-6'>
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Shared Contact Info */}
-      {sharedContact && <ContactWelcomeCard contact={sharedContact} />}
+      {sharedContact && sharedCompany && (
+        <div className="bg-white border rounded-lg p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Shared Contact
+          </h2>
+          <div className="flex items-start gap-6">
+            {/* Contact Info */}
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-3">
+                {sharedContact.avatar_url ? (
+                  <Image
+                    src={sharedContact.avatar_url}
+                    alt={sharedContact.name}
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                    <Users className="h-6 w-6 text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {sharedContact.name}
+                  </h3>
+                  {sharedContact.title && (
+                    <p className="text-sm text-gray-600">
+                      {sharedContact.title}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2 ml-15">
+                {sharedContact.email && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-gray-400" />
+                    <a
+                      href={`mailto:${sharedContact.email}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {sharedContact.email}
+                    </a>
+                  </div>
+                )}
+                {sharedContact.phone && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-700">{sharedContact.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
 
-      {/* --- Step 1: Date Selection --- */}
-      {step === 1 && (
-        <DateSelectionStep
-          dates={dates}
-          onToggleDate={toggleDate}
-          onNext={() => setStep(2)}
-        />
+            {/* Company Info */}
+            <div className="flex-1 border-l pl-6">
+              <div className="flex items-center gap-3 mb-3">
+                {sharedCompany.logo_url ? (
+                  <Image
+                    src={sharedCompany.logo_url}
+                    alt={sharedCompany.name}
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 rounded object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100">
+                    <Building2 className="h-6 w-6 text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {sharedCompany.name}
+                  </h3>
+                  {sharedCompany.website && (
+                    <a
+                      href={sharedCompany.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <Globe className="h-3 w-3" />
+                      Website
+                    </a>
+                  )}
+                </div>
+              </div>
+              {sharedCompany.description && (
+                <p className="text-sm text-gray-600 ml-15">
+                  {sharedCompany.description}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* --- Step 2: Company Selection --- */}
-      <AnimatePresence mode='wait'>
-        {step === 2 && (
-          <CompanySelectionStep
-            companies={companiesList}
-            selected={selected}
-            viewMode={viewMode}
-            token={token}
-            isMobile={isMobile}
-            onToggleCompany={toggleCompany}
-            onToggleAll={toggleAll}
-            onEditWhy={setActiveCompany}
-            onDelete={setCompanyToDelete}
-            onViewModeChange={setViewMode}
-            onBrowseClick={() => setBrowseOpen(true)}
-            onAddClick={() => setAddCompanyOpen(true)}
-            onBack={() => setStep(1)}
-            onNext={() => setStep(3)}
-          />
-        )}
+      {/* --- Step 1: Onboarding Style Dates --- */}
+      {step === 1 && (
+        <motion.div
+          className="bg-white border rounded-lg p-6 shadow-sm space-y-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+        >
+          <h2 className="text-2xl font-bold text-gray-900">
+            Step 1: Select Dates to Attend RippleTalk
+          </h2>
+          <p className="text-gray-600">
+            Choose the dates you are interested in attending. You can select multiple.
+          </p>
 
-        {/* --- Step 3: Confirmation --- */}
-        {step === 3 && (
-          <ConfirmationStep
-            selectedDatesCount={dates.filter((d) => d.is_selected).length}
-            selectedCompaniesCount={
-              Object.values(selected).filter(Boolean).length
-            }
-            onBack={() => setStep(2)}
-          />
-        )}
-      </AnimatePresence>
+          {dates.length === 0 ? (
+            <p className="text-gray-500">No available dates for this contact.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {dates.map((d) => (
+                <motion.label
+                  key={d.available_date}
+                  className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:shadow-md transition-shadow ${
+                    d.is_selected ? "border-green-500 bg-green-50" : "border-gray-300"
+                  }`}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span>{new Date(d.available_date).toLocaleString()}</span>
+                  <input
+                    type="checkbox"
+                    checked={!!d.is_selected}
+                    onChange={() => toggleDate(d.available_date)}
+                    className="w-5 h-5"
+                  />
+                </motion.label>
+              ))}
+            </div>
+          )}
 
-      {/* --- Dialogs --- */}
-      <WhyNoteDialog
-        company={activeCompany}
-        onClose={() => setActiveCompany(null)}
-        onSave={saveWhyAndNote}
-      />
+          <div className="flex justify-between items-center mt-6">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center">
+                1
+              </span>
+              <span className="text-gray-600">Select Dates</span>
+            </div>
+            <Button
+              onClick={() => setStep(2)}
+              disabled={dates.every((d) => !d.is_selected)}
+            >
+              Next: Select Opportunities →
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
-      <DeleteCompanyDialog
-        company={companyToDelete}
-        onClose={() => setCompanyToDelete(null)}
-        onDelete={deleteCompanyInDB}
-        isDeleting={deleting}
-      />
+      {/* --- Step 2: Select Companies --- */}
+      {step === 2 && (
+        <div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Key Stakeholder Opportunities
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Uncheck companies you’d rather pass on, or add new companies you want to connect with.
+            </p>
 
-      <BrowseCompaniesDialog
-        open={browseOpen}
-        onOpenChange={setBrowseOpen}
-        token={token}
-        onAddCompany={handleAddCompanyFromBrowse}
-      />
+            {companiesList.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  className="border-black text-black bg-white hover:bg-gray-100"
+                  onClick={toggleAll}
+                >
+                  {allSelected ? "Deselect All" : "Select All"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-black text-black bg-white hover:bg-gray-100"
+                  onClick={() => setViewMode(viewMode === "tiles" ? "table" : "tiles")}
+                >
+                  {viewMode === "tiles" ? "Table View" : "Tile View"}
+                </Button>
+              </div>
+            )}
+          </div>
 
-      <AddCompanyDialog
-        open={addCompanyOpen}
-        onOpenChange={setAddCompanyOpen}
-        token={token}
-        onAddCompany={handleAddCustomCompany}
-      />
+          {/* Table or Tiles View */}
+          {viewMode === "table" && (
+            <div className="overflow-x-auto mt-4">
+              <table className="w-full table-auto border-collapse border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border p-2 w-12"></th>
+                    <th className="border p-2 text-left">Company</th>
+                    <th className="border p-2 text-left">Description</th>
+                    <th className="border p-2 text-left">Category</th>
+                    <th className="border p-2 text-left">Why</th>
+                    <th className="border p-2 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {companiesList.map((company) => (
+                    <tr key={company.id} className="hover:bg-gray-50">
+                      <td className="border p-2 text-center">
+                        <button
+                          onClick={() => toggleCompany(company.id)}
+                          className={`w-5 h-5 rounded-sm border flex items-center justify-center mx-auto ${
+                            selected[company.id]
+                              ? "bg-green-500 border-green-500 text-white"
+                              : "bg-white border-gray-300 text-gray-400"
+                          }`}
+                        >
+                          {selected[company.id] && <Check size={12} />}
+                        </button>
+                      </td>
+                      <td className="border p-2">{company.name}</td>
+                      <td className="border p-2">{company.description || "—"}</td>
+                      <td className="border p-2">{company.relationship_category || "—"}</td>
+                      <td className="border p-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setActiveCompany(company)}
+                        >
+                          Why
+                        </Button>
+                      </td>
+                      <td className="border p-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCompanyToDelete(company)}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {viewMode === "tiles" &&
+            Object.entries(groupedCompanies).map(([category, companies]) => (
+              <div key={category} className="space-y-4 mt-4">
+                <h2 className="text-xl font-bold text-gray-700">{category}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {companies.map((company) => (
+                    <div
+                      key={company.id}
+                      className="relative flex flex-col p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white"
+                    >
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="absolute top-2 right-2"
+                        onClick={() => setCompanyToDelete(company)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                      <div className="flex items-start space-x-4">
+                        <button
+                          onClick={() => toggleCompany(company.id)}
+                          className={`w-5 h-5 rounded-sm border flex items-center justify-center mt-1 ${
+                            selected[company.id]
+                              ? "bg-green-500 border-green-500 text-white"
+                              : "bg-white border-gray-300 text-gray-400"
+                          }`}
+                        >
+                          {selected[company.id] && <Check size={12} />}
+                        </button>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800">{company.name}</p>
+                          {company.description && (
+                            <p className="mt-1 text-sm text-gray-500">{company.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="mt-4 w-full"
+                        onClick={() => setActiveCompany(company)}
+                      >
+                        Why
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+
+      {/* Delete & Side Panel modals (same as before) */}
+      {/* ... your existing AnimatePresence code here ... */}
     </div>
   );
 }
