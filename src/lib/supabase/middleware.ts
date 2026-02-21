@@ -32,10 +32,12 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected routes - redirect to login if not authenticated
-  // Exception: allow /share routes with a token parameter
+  // Exception: allow /share routes with a token parameter and /api/share/ routes
   const isShareWithToken =
     request.nextUrl.pathname.startsWith('/share') &&
     request.nextUrl.searchParams.has('token')
+
+  const isShareApi = request.nextUrl.pathname.startsWith('/api/share/')
 
   if (
     !user &&
@@ -43,7 +45,8 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/signup') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     request.nextUrl.pathname !== '/' &&
-    !isShareWithToken
+    !isShareWithToken &&
+    !isShareApi
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
