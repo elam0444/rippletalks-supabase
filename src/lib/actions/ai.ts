@@ -4,11 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 
 type TargetCompany = {
+  why: null;
   name: string;
   website?: string;
   description?: string;
   industry?: string;
-  contact?: string;
+  contact?: {
+    name?: string;
+    email?: string;
+  };
   relationship_category?: string;
 };
 
@@ -19,8 +23,25 @@ export async function fetchTargetCompaniesFromOpenAI(
 ): Promise<TargetCompany[]> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+  const exampleOutput = {
+    companies: [
+      {
+        name: "Example Company",
+        website: "https://example.com",
+        description: "A brief description of what this company does.",
+        why: "This explains why this company is relevant or complementary to the input description.",
+        industry: "Education Technology",
+        contact: {
+          name: "Partnerships Team",
+          email: "partnerships@example.com",
+        },
+        relationship_category: availableCategories[0] ?? "Partner",
+      },
+    ],
+  };
+
   const prompt = `
-You are an expert researcher. Generate a JSON array of companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
+You are an expert researcher. Generate a list of maximum 20 companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
 "${description}"
 
 Each company should include:
@@ -28,10 +49,14 @@ Each company should include:
 - website (if available)
 - description
 - industry
-- a contact person or email who could be useful for outreach
-- a suggested relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")} }
+- a contact email who could be useful for outreach
+- a relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
 
-Output strictly as a JSON array only. Do NOT return the same company described in the input.
+Return a JSON object with a single key "companies" containing an array of company objects.
+Do NOT return the same company described in the input.
+
+Example of the exact format to follow:
+${JSON.stringify(exampleOutput, null, 2)}
 `;
 
   const completion = await openai.chat.completions.create({
@@ -132,24 +157,19 @@ export async function saveTargetCompanies(
 
     // --- 2. Handle contact ---
     if (c.contact) {
-      const { data: existingContact } = await supabase
-        .from("contacts")
-        .select("id")
-        .eq("email", c.contact)
-        .single();
-
-      if (!existingContact?.id) {
-        const { error: contactError } = await supabase.from("contacts").insert([
+      const { error: contactError } = await supabase.from("contacts").upsert(
+        [
           {
             company_id: companyId,
-            email: c.contact,
+            email: c.contact.email,
+            name: c.contact.name,
             added_by_profile_id: addedByProfileId,
           },
-        ]);
+        ],
+        { onConflict: "email" }, // assumes email is unique
+      );
 
-        if (contactError)
-          console.error("Error inserting contact:", contactError);
-      }
+      if (contactError) console.error("Error upserting contact:", contactError);
     }
 
     const relationshipCategoryId = c.relationship_category
@@ -186,6 +206,7 @@ export async function saveTargetCompanies(
               relationship_category: fallbackCategoryId,
               selected: true,
               interested: false,
+              why: c.why || null,
             },
           ]);
 

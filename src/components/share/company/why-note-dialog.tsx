@@ -1,13 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Loader2, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { Company } from "@/types/share";
@@ -18,15 +13,11 @@ interface WhyNoteDialogProps {
   onSave: (why: string, note: string) => Promise<void>;
 }
 
-/**
- * Dialog for editing "Why" and "Note" fields for a company
- */
 export function WhyNoteDialog({ company, onClose, onSave }: WhyNoteDialogProps) {
   const [whyText, setWhyText] = useState("");
   const [noteText, setNoteText] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Update state when company changes
   useEffect(() => {
     if (company) {
       setWhyText(company.why ?? "");
@@ -47,41 +38,76 @@ export function WhyNoteDialog({ company, onClose, onSave }: WhyNoteDialogProps) 
   };
 
   return (
-    <Dialog open={!!company} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Why — {company?.name}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 pt-2">
-          <div>
-            <label className="text-sm font-medium text-gray-700">Why</label>
-            <Textarea
-              placeholder="Why this company?"
-              value={whyText}
-              onChange={(e) => setWhyText(e.target.value)}
-              className="mt-1 min-h-20"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">Note</label>
-            <Textarea
-              placeholder="Optional note"
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-              className="mt-1 min-h-[60px]"
-            />
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            {saving ? "Saving…" : "Save"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <AnimatePresence>
+      {!!company && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={onClose}
+          />
+
+          {/* Panel sliding from right */}
+          <motion.div
+            key="panel"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-xl z-50 flex flex-col"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Why — {company.name}
+              </h2>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Why</label>
+                <Textarea
+                  placeholder="Why this company?"
+                  value={whyText}
+                  onChange={(e) => setWhyText(e.target.value)}
+                  className="mt-1 min-h-28"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Note</label>
+                <Textarea
+                  placeholder="Optional note"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  className="mt-1 min-h-[60px]"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose} disabled={saving}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {saving ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
