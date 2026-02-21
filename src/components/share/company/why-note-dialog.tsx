@@ -5,7 +5,7 @@ import { Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { Company } from "@/types/share";
+import type { Company } from "@/types/company";
 
 interface WhyNoteDialogProps {
   company: Company | null;
