@@ -127,7 +127,7 @@ export function AddTargetCompanyForm({
 
       const descriptionText =
         `Company Name: ${company.name}` +
-        `\nIndustry: ${company.industry?.name || "N/A"}` +
+        `\nIndustry: ${company.industry?.[0]?.name || "N/A"}` +
         `\nDescription: ${company.description || "N/A"}` +
         `\nWebsite: ${company.website || "N/A"}`;
 

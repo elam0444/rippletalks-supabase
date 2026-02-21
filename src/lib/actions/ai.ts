@@ -29,7 +29,7 @@ Each company should include:
 - description
 - industry
 - a contact person or email who could be useful for outreach
-- a suggested relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
+- a suggested relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")} }
 
 Output strictly as a JSON array only. Do NOT return the same company described in the input.
 `;
@@ -56,11 +56,7 @@ Output strictly as a JSON array only. Do NOT return the same company described i
     }
 
     const companies: TargetCompany[] = Array.isArray(parsed.companies)
-      ? parsed.companies.map((c: any) => ({
-          ...c,
-          relationship_category:
-            c.relationship_category ?? c.relationship ?? null,
-        }))
+      ? parsed.companies
       : [];
     return companies;
   } catch (err) {
