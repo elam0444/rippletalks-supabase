@@ -29,7 +29,7 @@ Each company should include:
 - description
 - industry
 - a contact person or email who could be useful for outreach
-- a suggested relationship category from the following options: ${availableCategories.join(", ")}
+- a suggested relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
 
 Output strictly as a JSON array only. Do NOT return the same company described in the input.
 `;
@@ -56,7 +56,11 @@ Output strictly as a JSON array only. Do NOT return the same company described i
     }
 
     const companies: TargetCompany[] = Array.isArray(parsed.companies)
-      ? parsed.companies
+      ? parsed.companies.map((c: any) => ({
+          ...c,
+          relationship_category:
+            c.relationship_category ?? c.relationship ?? null,
+        }))
       : [];
     return companies;
   } catch (err) {
@@ -166,6 +170,15 @@ export async function saveTargetCompanies(
         .single();
 
       if (!existingTarget?.id) {
+        // Fall back to the first available category if none matched
+        const fallbackCategoryId =
+          relationshipCategoryId ?? (categories?.[0]?.id || null);
+
+        if (!fallbackCategoryId) {
+          console.error("No relationship category available, skipping insert");
+          continue;
+        }
+
         const { error: targetError } = await supabase
           .from("target_companies")
           .insert([
@@ -174,7 +187,7 @@ export async function saveTargetCompanies(
               client_company_id: clientCompanyId,
               profile_id: addedByProfileId,
               added_by_profile_id: addedByProfileId,
-              relationship_category: relationshipCategoryId,
+              relationship_category: fallbackCategoryId,
               selected: true,
               interested: false,
             },
