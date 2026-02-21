@@ -31,7 +31,6 @@ export function ShareClient({
   companies = [],
   clientCompanyId,
   sharedContact,
-  sharedCompany, // Accept but not used (for backward compatibility)
   contactDates: initialDates = [],
   token,
 }: Props) {
@@ -43,14 +42,14 @@ export function ShareClient({
   const toggleDate = (date: string) => {
     setDates((prev) =>
       prev.map((d) =>
-        d.available_date === date ? { ...d, is_selected: !d.is_selected } : d
-      )
+        d.available_date === date ? { ...d, is_selected: !d.is_selected } : d,
+      ),
     );
   };
 
   // --- Step 2: Companies ---
   const [selected, setSelected] = useState<Record<string, boolean>>(
-    Object.fromEntries(companies.map((c) => [c.id, c.selected ?? true]))
+    Object.fromEntries(companies.map((c) => [c.id, c.selected ?? true])),
   );
   const [companiesList, setCompaniesList] = useState(companies);
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
@@ -103,7 +102,7 @@ export function ShareClient({
         console.error("Unexpected API error:", err);
       }
     },
-    [token, clientCompanyId]
+    [token, clientCompanyId],
   );
 
   const toggleCompany = useCallback(
@@ -112,7 +111,7 @@ export function ShareClient({
       setSelected((prev) => ({ ...prev, [id]: newValue }));
       updateSelectedInDB(id, newValue);
     },
-    [selected, updateSelectedInDB]
+    [selected, updateSelectedInDB],
   );
 
   const toggleAll = useCallback(() => {
@@ -214,8 +213,8 @@ export function ShareClient({
       if (res.ok) {
         setCompaniesList((prev) =>
           prev.map((c) =>
-            c.id === activeCompany.id ? { ...c, why, note } : c
-          )
+            c.id === activeCompany.id ? { ...c, why, note } : c,
+          ),
         );
       } else {
         console.error("API error:", data.error);
@@ -226,7 +225,7 @@ export function ShareClient({
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className='max-w-6xl mx-auto p-6 space-y-6'>
       {/* Shared Contact Info */}
       {sharedContact && <ContactWelcomeCard contact={sharedContact} />}
 
@@ -240,7 +239,7 @@ export function ShareClient({
       )}
 
       {/* --- Step 2: Company Selection --- */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode='wait'>
         {step === 2 && (
           <CompanySelectionStep
             companies={companiesList}
