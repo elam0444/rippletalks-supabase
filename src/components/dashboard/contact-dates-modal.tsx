@@ -180,7 +180,7 @@ export default function ContactDatesModal({
                             disabled={disabled}
                             onClick={() => {
                               handleTimeChange(index, time);
-                              setActiveIndex(null); // 👈 close selector after pick
+                              setActiveIndex(null);
                             }}
                             className={`w-full px-3 py-2 rounded-lg text-left text-sm transition
                   ${

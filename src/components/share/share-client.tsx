@@ -39,13 +39,53 @@ export function ShareClient({
   // --- Step 1: Contact Dates ---
   const [dates, setDates] = useState(initialDates);
 
-  const toggleDate = (date: string) => {
-    setDates((prev) =>
-      prev.map((d) =>
-        d.available_date === date ? { ...d, is_selected: !d.is_selected } : d,
-      ),
-    );
-  };
+  const toggleDate = useCallback(
+    async (date: string) => {
+      const current = dates.find((d) => d.available_date === date);
+      if (!current) return;
+      const newValue = !current.is_selected;
+
+      // Optimistically update UI
+      setDates((prev) =>
+        prev.map((d) =>
+          d.available_date === date ? { ...d, is_selected: newValue } : d,
+        ),
+      );
+
+      if (token) {
+        try {
+          const res = await fetch("/api/share/update-date", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token,
+              availableDate: date,
+              isSelected: newValue,
+            }),
+          });
+          if (!res.ok) {
+            const data = await res.json();
+            console.error("API error:", data.error);
+            // Revert on failure
+            setDates((prev) =>
+              prev.map((d) =>
+                d.available_date === date ? { ...d, is_selected: !newValue } : d,
+              ),
+            );
+          }
+        } catch (err) {
+          console.error("Unexpected API error:", err);
+          // Revert on failure
+          setDates((prev) =>
+            prev.map((d) =>
+              d.available_date === date ? { ...d, is_selected: !newValue } : d,
+            ),
+          );
+        }
+      }
+    },
+    [dates, token],
+  );
 
   // --- Step 2: Companies ---
   const [selected, setSelected] = useState<Record<string, boolean>>(

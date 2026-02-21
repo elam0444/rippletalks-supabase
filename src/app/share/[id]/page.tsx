@@ -95,16 +95,16 @@ export default async function SharePage({
 
           const { data, error } = await adminClient
             .from("contact_available_dates")
-            .select("available_date")
+            .select("available_date, is_selected")
             .eq("contact_id", sharedContact.id)
             .order("available_date", { ascending: true });
 
           if (error) {
             console.error("Error fetching contact dates:", error);
           } else if (data) {
-            contactDates = (data || []).map((d: { available_date: string }) => ({
+            contactDates = (data || []).map((d: { available_date: string; is_selected: boolean }) => ({
               available_date: d.available_date,
-              is_selected: false,
+              is_selected: d.is_selected ?? false,
             }));
           }
 
