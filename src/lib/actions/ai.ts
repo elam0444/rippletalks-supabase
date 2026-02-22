@@ -20,7 +20,7 @@ export async function fetchTargetCompaniesFromOpenAI(
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const prompt = `
-You are an expert researcher. Generate a JSON array of 2 companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
+You are an expert researcher. Generate a JSON array of companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
 "${description}"
 
 Each company should include:

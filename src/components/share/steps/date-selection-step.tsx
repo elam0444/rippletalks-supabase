@@ -1,0 +1,63 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { DateSelectionCard } from "../date/date-selection-card";
+import { StepIndicator } from "../shared/step-indicator";
+import type { ContactDate } from "@/types/share";
+
+interface DateSelectionStepProps {
+  dates: ContactDate[];
+  onToggleDate: (date: string) => void;
+  onNext: () => void;
+}
+
+/**
+ * Step 1: Date selection screen
+ */
+export function DateSelectionStep({
+  dates,
+  onToggleDate,
+  onNext,
+}: DateSelectionStepProps) {
+  const hasSelectedDates = dates.some((d) => d.is_selected);
+
+  return (
+    <motion.div
+      className="bg-white border rounded-lg p-6 shadow-sm space-y-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+    >
+      <h2 className="text-2xl font-bold text-gray-900">
+        Step 1: Select Dates to Attend RippleTalk
+      </h2>
+      <p className="text-gray-600">
+        Choose the dates you are interested in attending. You can select
+        multiple.
+      </p>
+
+      {dates.length === 0 ? (
+        <p className="text-gray-500">No available dates for this contact.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {dates.map((d) => (
+            <DateSelectionCard
+              key={d.available_date}
+              date={d.available_date}
+              isSelected={d.is_selected}
+              onToggle={() => onToggleDate(d.available_date)}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="flex justify-between items-center mt-6">
+        <StepIndicator step={1} label="Select Dates" />
+        <Button onClick={onNext} disabled={!hasSelectedDates}>
+          Next: Select Opportunities →
+        </Button>
+      </div>
+    </motion.div>
+  );
+}

@@ -7,6 +7,8 @@ import { Building2, Globe, ChevronRight } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { CategoryBadge } from "@/components/ui/category-badge";
+import { truncateText } from "@/lib/utils/text-utils";
 
 type Company = {
   id: any;
@@ -15,27 +17,6 @@ type Company = {
   logo_url: any;
   description: any;
   industries: any;
-};
-
-// Function to generate consistent color for each industry
-const getIndustryColor = (industryName: string) => {
-  const colors = [
-    "bg-blue-100 text-blue-700 hover:bg-blue-100",
-    "bg-green-100 text-green-700 hover:bg-green-100",
-    "bg-purple-100 text-purple-700 hover:bg-purple-100",
-    "bg-orange-100 text-orange-700 hover:bg-orange-100",
-    "bg-pink-100 text-pink-700 hover:bg-pink-100",
-    "bg-cyan-100 text-cyan-700 hover:bg-cyan-100",
-    "bg-amber-100 text-amber-700 hover:bg-amber-100",
-    "bg-indigo-100 text-indigo-700 hover:bg-indigo-100",
-  ];
-
-  // Generate a consistent hash from the industry name
-  const hash = industryName.split('').reduce((acc, char) => {
-    return char.charCodeAt(0) + ((acc << 5) - acc);
-  }, 0);
-
-  return colors[Math.abs(hash) % colors.length];
 };
 
 const columns: ColumnDef<Company>[] = [
@@ -74,14 +55,7 @@ const columns: ColumnDef<Company>[] = [
     accessorFn: (row) => row.industries?.name || "—",
     cell: ({ row }) => {
       const company = row.original;
-      if (!company.industries?.name) {
-        return <span className="text-muted-foreground">—</span>;
-      }
-      return (
-        <Badge className={cn("truncate", getIndustryColor(company.industries.name))}>
-          {company.industries.name}
-        </Badge>
-      );
+      return <CategoryBadge category={company.industries?.name || ""} />;
     },
     size: 150,
   },
@@ -93,10 +67,7 @@ const columns: ColumnDef<Company>[] = [
       if (!company.description) {
         return <span className="text-muted-foreground">—</span>;
       }
-      const maxLength = 60;
-      const truncated = company.description.length > maxLength
-        ? `${company.description.slice(0, maxLength)}...`
-        : company.description;
+      const truncated = truncateText(company.description, 60);
       return (
         <p className="text-sm text-muted-foreground">
           {truncated}

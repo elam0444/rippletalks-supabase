@@ -85,6 +85,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
       note,
       selected,
       interested,
+      updated_at,
       target_company:target_company_id (
         id,
         name,
@@ -244,14 +245,14 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
+                          <ContactDatesModal
+                            contactId={contact.id}
+                            companyId={company.id}
+                          />
                           <ShareContactButton
                             contactId={contact.id}
                             companyId={company.id}
                             contactName={contact.name}
-                          />
-                          <ContactDatesModal
-                            contactId={contact.id}
-                            companyId={company.id}
                           />
                           <EditContactForm
                             contactId={contact.id}
@@ -309,6 +310,8 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                     <TableHead className="w-[300px]">Target Company</TableHead>
                     <TableHead className="w-[150px]">Category</TableHead>
                     <TableHead>Why</TableHead>
+                    <TableHead className="w-[110px]">Interested</TableHead>
+                    <TableHead className="w-[140px]">Last Activity</TableHead>
                     <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -357,6 +360,29 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                           >
                             {target.why || "—"}
                           </p>
+                        </TableCell>
+                        <TableCell>
+                          {target.selected ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                              ✓ Selected
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                              Passed
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className="text-xs text-muted-foreground"
+                            title={new Date(target.updated_at).toLocaleString()}
+                          >
+                            {new Date(target.updated_at).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
