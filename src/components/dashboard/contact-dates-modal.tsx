@@ -121,9 +121,12 @@ export default function ContactDatesModal({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+        >
           <CalendarIcon className="h-4 w-4 mr-1" />
-          Dates
         </Button>
       </DialogTrigger>
 
@@ -134,7 +137,6 @@ export default function ContactDatesModal({
 
         <div className="grid grid-cols-[1fr_240px] gap-6 py-4">
           <div className="space-y-2">
-
             <DayPicker
               mode="multiple"
               captionLayout="dropdown"

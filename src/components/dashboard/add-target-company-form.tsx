@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -89,22 +88,11 @@ export function AddTargetCompanyForm({
   availableCompanies,
   categories,
 }: AddTargetCompanyFormProps) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [companyPopoverOpen, setCompanyPopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiDescription, setAiDescription] = useState("");
   const [loadingCompany, setLoadingCompany] = useState(true);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      target_company_id: "",
-      relationship_category: "",
-      why: "",
-      note: "",
-    },
-  });
 
   useEffect(() => {
     if (!clientCompanyId) return;
@@ -138,6 +126,16 @@ export function AddTargetCompanyForm({
     fetchCompany();
   }, [clientCompanyId]);
 
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      target_company_id: "",
+      relationship_category: "",
+      why: "",
+      note: "",
+    },
+  });
+
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
     const result = await addTargetCompany({
@@ -158,25 +156,6 @@ export function AddTargetCompanyForm({
     }
   }
 
-  async function generateTargetsForDescription(
-    description: string,
-    profileId: string,
-    clientCompanyId?: string,
-  ) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    const targets = await createTargetCompaniesFromDescription(
-      description,
-      profileId,
-      clientCompanyId,
-    );
-    return targets;
-  }
-
   async function handleGenerateTargets() {
     if (!clientCompanyId) {
       toast.error("Client company ID is missing.");
@@ -186,22 +165,23 @@ export function AddTargetCompanyForm({
     setIsSubmitting(true);
 
     try {
-      const supabase = await createClient();
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return { success: false, error: "Unauthorized" };
 
-      const description = aiDescription || "";
+      if (!user) {
+        toast.error("Unauthorized");
+        return;
+      }
 
-      const result = await generateTargetsForDescription(
-        description,
+      const result = await createTargetCompaniesFromDescription(
+        aiDescription,
         user.id,
         clientCompanyId,
       );
 
       toast.success(`Generated ${result.length} target companies!`);
-      router.refresh()
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate target companies.");
@@ -210,8 +190,6 @@ export function AddTargetCompanyForm({
     }
   }
 
-  if (loadingCompany) return null; // prevent hydration mismatch
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <div className="flex justify-end gap-2 pt-4">
@@ -219,7 +197,7 @@ export function AddTargetCompanyForm({
           size="sm"
           className="cursor-pointer flex items-center text-emerald-400 bg-gray-900 hover:bg-gray-800 border border-emerald-400 rounded-md shadow-lg hover:shadow-xl transition-all duration-300"
           onClick={handleGenerateTargets}
-          disabled={isSubmitting || !clientCompanyId}
+          disabled={isSubmitting || loadingCompany || !clientCompanyId}
         >
           <Brain
             className={cn(
@@ -244,12 +222,12 @@ export function AddTargetCompanyForm({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name='target_company_id'
+              name="target_company_id"
               render={({ field }) => (
-                <FormItem className='flex flex-col'>
+                <FormItem className="flex flex-col">
                   <FormLabel>Target Company *</FormLabel>
                   <Popover
                     open={companyPopoverOpen}
@@ -259,38 +237,38 @@ export function AddTargetCompanyForm({
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
-                          variant='outline'
-                          role='combobox'
+                          variant="outline"
+                          role="combobox"
                           aria-expanded={companyPopoverOpen}
-                          className='w-full justify-between border-input bg-background px-3 font-normal outline-offset-0 outline-none hover:bg-background focus-visible:outline-[3px]'
+                          className="w-full justify-between border-input bg-background px-3 font-normal outline-offset-0 outline-none hover:bg-background focus-visible:outline-[3px]"
                         >
                           <span
                             className={cn(
                               "truncate",
-                              !field.value && "text-muted-foreground"
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             {field.value
                               ? availableCompanies.find(
-                                  (company) => company.id === field.value
+                                  (company) => company.id === field.value,
                                 )?.name
                               : "Select a company"}
                           </span>
                           <ChevronDown
                             size={16}
-                            className='shrink-0 text-muted-foreground/80'
-                            aria-hidden='true'
+                            className="shrink-0 text-muted-foreground/80"
+                            aria-hidden="true"
                           />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent
-                      className='w-full min-w-(--radix-popper-anchor-width) border-input p-0'
-                      align='start'
+                      className="w-full min-w-(--radix-popper-anchor-width) border-input p-0"
+                      align="start"
                     >
                       <Command>
-                        <CommandInput placeholder='Search companies...' />
-                        <CommandList className='max-h-[275px] overflow-y-auto'>
+                        <CommandInput placeholder="Search companies..." />
+                        <CommandList className="max-h-[275px] overflow-y-auto">
                           <CommandEmpty>No company found.</CommandEmpty>
                           <CommandGroup>
                             {availableCompanies.map((company) => (
@@ -300,27 +278,27 @@ export function AddTargetCompanyForm({
                                 onSelect={() => {
                                   form.setValue(
                                     "target_company_id",
-                                    company.id
+                                    company.id,
                                   );
                                   setCompanyPopoverOpen(false);
                                 }}
                               >
-                                <div className='flex items-center gap-2'>
+                                <div className="flex items-center gap-2">
                                   {company.logo_url ? (
                                     <Image
                                       src={company.logo_url}
                                       alt={company.name}
                                       width={20}
                                       height={20}
-                                      className='h-5 w-5 rounded object-cover'
+                                      className="h-5 w-5 rounded object-cover"
                                     />
                                   ) : (
-                                    <Building2 className='h-5 w-5 text-muted-foreground' />
+                                    <Building2 className="h-5 w-5 text-muted-foreground" />
                                   )}
                                   {company.name}
                                 </div>
                                 {field.value === company.id && (
-                                  <Check size={16} className='ml-auto' />
+                                  <Check size={16} className="ml-auto" />
                                 )}
                               </CommandItem>
                             ))}
@@ -336,7 +314,7 @@ export function AddTargetCompanyForm({
 
             <FormField
               control={form.control}
-              name='relationship_category'
+              name="relationship_category"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Relationship Category *</FormLabel>
@@ -346,7 +324,7 @@ export function AddTargetCompanyForm({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder='Select a category' />
+                        <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -364,14 +342,14 @@ export function AddTargetCompanyForm({
 
             <FormField
               control={form.control}
-              name='why'
+              name="why"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Why</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder='Why are you targeting this company?'
-                      className='min-h-20 max-h-40 resize-y'
+                      placeholder="Why are you targeting this company?"
+                      className="min-h-20 max-h-40 resize-y"
                       {...field}
                     />
                   </FormControl>
@@ -382,14 +360,14 @@ export function AddTargetCompanyForm({
 
             <FormField
               control={form.control}
-              name='note'
+              name="note"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Note</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder='Additionally notes...'
-                      className='min-h-20 max-h-40 resize-y'
+                      placeholder="Additionally notes..."
+                      className="min-h-20 max-h-40 resize-y"
                       {...field}
                     />
                   </FormControl>
@@ -398,20 +376,20 @@ export function AddTargetCompanyForm({
               )}
             />
 
-            <div className='flex justify-end gap-2 pt-4'>
+            <div className="flex justify-end gap-2 pt-4">
               <Button
-                type='button'
-                variant='outline'
+                type="button"
+                variant="outline"
                 onClick={() => setOpen(false)}
               >
                 Cancel
               </Button>
               <Button
-                type='submit'
+                type="submit"
                 disabled={isSubmitting || availableCompanies.length === 0}
               >
                 {isSubmitting && (
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Add Target
               </Button>

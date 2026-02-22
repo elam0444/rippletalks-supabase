@@ -244,14 +244,14 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
+                          <ContactDatesModal
+                            contactId={contact.id}
+                            companyId={company.id}
+                          />
                           <ShareContactButton
                             contactId={contact.id}
                             companyId={company.id}
                             contactName={contact.name}
-                          />
-                          <ContactDatesModal
-                            contactId={contact.id}
-                            companyId={company.id}
                           />
                           <EditContactForm
                             contactId={contact.id}
