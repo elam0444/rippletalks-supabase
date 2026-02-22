@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 
@@ -8,7 +9,7 @@ type TargetCompany = {
   website?: string;
   description?: string;
   industry?: string;
-  contact?: { email?: string; name?: string } | null;
+  contact?: { email?: string; name?: string; title?: string } | null;
   relationship_category?: string;
 };
 
@@ -28,7 +29,7 @@ Each company should include:
 - website (if available)
 - description
 - industry
-- a contact object with "name" and "email" fields for a person who could be useful for outreach
+- a contact object with "name" (first and last name only, no title), "title" (job title separately), and "email" fields for a person who could be useful for outreach
 - a relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
 
 Output strictly as a JSON object with a "companies" array. Do NOT return the same company described in the input.
@@ -43,6 +44,7 @@ Example output format:
       "industry": "Cloud Computing",
       "contact": {
         "name": "Jane Smith",
+        "title": "Head of Partnerships",
         "email": "jane.smith@acmecorp.com"
       },
       "relationship_category": "Strategic Partner"
@@ -54,6 +56,7 @@ Example output format:
       "industry": "Venture Capital",
       "contact": {
         "name": "Tom Nguyen",
+        "title": "General Partner",
         "email": "tom@brightventures.io"
       },
       "relationship_category": "Investor"
@@ -180,26 +183,21 @@ export async function saveTargetCompanies(
 
     // --- 2. Handle contact (separate model, linked via company_id) ---
     if (c.contact?.email) {
-      const { data: existingContact } = await supabase
+      const { error: contactError } = await supabase
         .from("contacts")
-        .select("id")
-        .eq("email", c.contact.email)
-        .eq("company_id", companyId)
-        .single();
-
-      if (!existingContact?.id) {
-        const { error: contactError } = await supabase.from("contacts").insert([
+        .upsert(
           {
             company_id: companyId,
             email: c.contact.email,
             name: c.contact.name || null,
+            title: c.contact.title || null,
             added_by_profile_id: addedByProfileId,
           },
-        ]);
+          { onConflict: "email", ignoreDuplicates: true },
+        );
 
-        if (contactError) {
-          console.error("Error inserting contact:", contactError);
-        }
+      if (contactError) {
+        console.error("Error upserting contact:", contactError);
       }
     }
 
@@ -283,5 +281,8 @@ export async function createTargetCompaniesFromDescription(
   console.log(
     `Generated and saved ${saved.length} target companies for description: "${description}"`,
   );
+
+  revalidatePath("/dashboard/companies");
+
   return saved;
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import {
   Form,
   FormControl,
@@ -90,6 +90,7 @@ export function AddTargetCompanyForm({
   categories,
 }: AddTargetCompanyFormProps) {
   const router = useRouter();
+  const [, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [companyPopoverOpen, setCompanyPopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -188,7 +189,7 @@ export function AddTargetCompanyForm({
       );
 
       toast.success(`Generated ${result.length} target companies!`);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate target companies.");
@@ -197,8 +198,6 @@ export function AddTargetCompanyForm({
     }
   }
 
-  if (loadingCompany) return null;
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <div className="flex justify-end gap-2 pt-4">
@@ -206,7 +205,7 @@ export function AddTargetCompanyForm({
           size="sm"
           className="cursor-pointer flex items-center text-emerald-400 bg-gray-900 hover:bg-gray-800 border border-emerald-400 rounded-md shadow-lg hover:shadow-xl transition-all duration-300"
           onClick={handleGenerateTargets}
-          disabled={isSubmitting || !clientCompanyId}
+          disabled={isSubmitting || loadingCompany || !clientCompanyId}
         >
           <Brain
             className={cn(
