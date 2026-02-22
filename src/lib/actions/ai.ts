@@ -49,14 +49,38 @@ Each company should include:
 - website (if available)
 - description
 - industry
-- a contact email who could be useful for outreach
+- a contact object with "name" and "email" fields for a person who could be useful for outreach
 - a relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
 
-Return a JSON object with a single key "companies" containing an array of company objects.
-Do NOT return the same company described in the input.
+Output strictly as a JSON object with a "companies" array. Do NOT return the same company described in the input.
 
-Example of the exact format to follow:
-${JSON.stringify(exampleOutput, null, 2)}
+Example output format:
+{
+  "companies": [
+    {
+      "name": "Acme Corp",
+      "website": "https://acmecorp.com",
+      "description": "A leading provider of cloud infrastructure solutions for mid-market enterprises.",
+      "industry": "Cloud Computing",
+      "contact": {
+        "name": "Jane Smith",
+        "email": "jane.smith@acmecorp.com"
+      },
+      "relationship_category": "Strategic Partner"
+    },
+    {
+      "name": "Bright Ventures",
+      "website": "https://brightventures.io",
+      "description": "Early-stage VC fund focused on B2B SaaS startups.",
+      "industry": "Venture Capital",
+      "contact": {
+        "name": "Tom Nguyen",
+        "email": "tom@brightventures.io"
+      },
+      "relationship_category": "Investor"
+    }
+  ]
+}
 `;
 
   const completion = await openai.chat.completions.create({
@@ -93,20 +117,35 @@ ${JSON.stringify(exampleOutput, null, 2)}
 export async function saveTargetCompanies(
   companies: TargetCompany[],
   addedByProfileId: string,
-  clientCompanyId?: string, // ID of the company that owns these targets
+  clientCompanyId?: string,
 ) {
   if (companies.length === 0) return [];
 
   const supabase = await createClient();
 
+  // Fetch relationship categories
   const { data: categories } = await supabase
     .from("relationship_categories")
-    .select("id,name");
+    .select("id, name");
 
   const categoryMap =
     categories?.reduce(
       (acc, c) => {
         acc[c.name.toLowerCase()] = c.id;
+        return acc;
+      },
+      {} as Record<string, string>,
+    ) || {};
+
+  // Fetch industries
+  const { data: industries } = await supabase
+    .from("industries")
+    .select("id, name");
+
+  const industryMap =
+    industries?.reduce(
+      (acc, i) => {
+        acc[i.name.toLowerCase()] = i.id;
         return acc;
       },
       {} as Record<string, string>,
@@ -120,7 +159,7 @@ export async function saveTargetCompanies(
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
 
-    // --- 1. Handle company ---
+    // --- 1. Upsert company ---
     const { data: existingCompany } = await supabase
       .from("companies")
       .select("id")
@@ -130,8 +169,13 @@ export async function saveTargetCompanies(
     let companyId: string;
 
     if (existingCompany?.id) {
+      // Company already exists — reuse it
       companyId = existingCompany.id;
     } else {
+      const industryId = c.industry
+        ? (industryMap[c.industry.toLowerCase()] ?? null)
+        : null;
+
       const { data: companyData, error: companyError } = await supabase
         .from("companies")
         .insert([
@@ -139,7 +183,7 @@ export async function saveTargetCompanies(
             name: c.name,
             website: c.website || null,
             description: c.description || null,
-            industry_id: null,
+            industry_id: industryId,
             added_by_profile_id: addedByProfileId,
             slug,
           },
@@ -147,7 +191,7 @@ export async function saveTargetCompanies(
         .select("id")
         .single();
 
-      if (companyError) {
+      if (companyError || !companyData) {
         console.error("Error inserting company:", companyError);
         continue;
       }
@@ -155,29 +199,50 @@ export async function saveTargetCompanies(
       companyId = companyData.id;
     }
 
-    // --- 2. Handle contact ---
-    if (c.contact) {
-      const { error: contactError } = await supabase.from("contacts").upsert(
-        [
+    // --- 2. Handle contact (separate model, linked via company_id) ---
+    if (c.contact?.email) {
+      const { data: existingContact } = await supabase
+        .from("contacts")
+        .select("id")
+        .eq("email", c.contact.email)
+        .eq("company_id", companyId)
+        .single();
+
+      if (!existingContact?.id) {
+        const { error: contactError } = await supabase.from("contacts").insert([
           {
             company_id: companyId,
             email: c.contact.email,
-            name: c.contact.name,
+            name: c.contact.name || null,
             added_by_profile_id: addedByProfileId,
           },
         ],
         { onConflict: "email" }, // assumes email is unique
       );
 
-      if (contactError) console.error("Error upserting contact:", contactError);
+        if (contactError) {
+          console.error("Error inserting contact:", contactError);
+        }
+      }
     }
 
-    const relationshipCategoryId = c.relationship_category
-      ? categoryMap[c.relationship_category.toLowerCase()] || null
-      : null;
-
-    // --- 3. Handle target_companies ---
+    // --- 3. Handle target_companies (always attempt, even if company existed) ---
     if (clientCompanyId) {
+      const relationshipCategoryId = c.relationship_category
+        ? (categoryMap[c.relationship_category.toLowerCase()] ?? null)
+        : null;
+
+      const fallbackCategoryId =
+        relationshipCategoryId ?? categories?.[0]?.id ?? null;
+
+      if (!fallbackCategoryId) {
+        console.error(
+          "No relationship category available, skipping target_companies insert",
+        );
+        insertedCompanies.push({ id: companyId, name: c.name });
+        continue;
+      }
+
       const { data: existingTarget } = await supabase
         .from("target_companies")
         .select("id")
@@ -210,8 +275,13 @@ export async function saveTargetCompanies(
             },
           ]);
 
-        if (targetError)
+        if (targetError) {
           console.error("Error inserting into target_companies:", targetError);
+        }
+      } else {
+        console.log(
+          `Target company relationship already exists for company: ${c.name}`,
+        );
       }
     }
 
@@ -226,7 +296,6 @@ export async function createTargetCompaniesFromDescription(
   profileId: string,
   clientCompanyId?: string,
 ) {
-  // Fetch all relationship categories to feed AI
   const supabase = await createClient();
   const { data: categories } = await supabase
     .from("relationship_categories")
