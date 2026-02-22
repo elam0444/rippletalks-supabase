@@ -99,6 +99,7 @@ export function AddTargetCompanyForm({
   useEffect(() => {
     if (!clientCompanyId) return;
 
+    // createClient() from the browser client is synchronous — no await
     const supabase = createClient();
 
     async function fetchCompany() {
@@ -160,25 +161,6 @@ export function AddTargetCompanyForm({
     }
   }
 
-  async function generateTargetsForDescription(
-    description: string,
-    profileId: string,
-    clientCompanyId?: string,
-  ) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    const targets = await createTargetCompaniesFromDescription(
-      description,
-      profileId,
-      clientCompanyId,
-    );
-    return targets;
-  }
-
   async function handleGenerateTargets() {
     if (!clientCompanyId) {
       toast.error("Client company ID is missing.");
@@ -188,22 +170,25 @@ export function AddTargetCompanyForm({
     setIsSubmitting(true);
 
     try {
-      const supabase = await createClient();
+      // createClient() from the browser client is synchronous — no await
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return { success: false, error: "Unauthorized" };
 
-      const description = aiDescription || "";
+      if (!user) {
+        toast.error("Unauthorized");
+        return;
+      }
 
-      const result = await generateTargetsForDescription(
-        description,
+      const result = await createTargetCompaniesFromDescription(
+        aiDescription,
         user.id,
         clientCompanyId,
       );
 
       toast.success(`Generated ${result.length} target companies!`);
-      router.refresh()
+      router.refresh();
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate target companies.");
