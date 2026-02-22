@@ -14,7 +14,14 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { format, isToday, isBefore, startOfMinute } from "date-fns";
+import {
+  format,
+  isToday,
+  isBefore,
+  startOfMinute,
+  addMonths,
+  subMonths,
+} from "date-fns";
 
 interface ContactDatesModalProps {
   contactId: string;
@@ -183,7 +190,7 @@ export default function ContactDatesModal({
                             disabled={disabled}
                             onClick={() => {
                               handleTimeChange(index, time);
-                              setActiveIndex(null);
+                              setActiveIndex(null); // 👈 close selector after pick
                             }}
                             className={`w-full px-3 py-2 rounded-lg text-left text-sm transition
                   ${
