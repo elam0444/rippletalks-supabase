@@ -88,7 +88,6 @@ export function AddTargetCompanyForm({
   availableCompanies,
   categories,
 }: AddTargetCompanyFormProps) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [companyPopoverOpen, setCompanyPopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,7 +97,6 @@ export function AddTargetCompanyForm({
   useEffect(() => {
     if (!clientCompanyId) return;
 
-    // createClient() from the browser client is synchronous — no await
     const supabase = createClient();
 
     async function fetchCompany() {
@@ -138,38 +136,6 @@ export function AddTargetCompanyForm({
     },
   });
 
-  useEffect(() => {
-    if (!clientCompanyId) return;
-
-    const supabase = createClient();
-
-    async function fetchCompany() {
-      setLoadingCompany(true);
-      const { data: company, error } = await supabase
-        .from("companies")
-        .select(`name, description, website, industry:industry_id(name)`)
-        .eq("id", clientCompanyId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching company:", error);
-        setLoadingCompany(false);
-        return;
-      }
-
-      const descriptionText =
-        `Company Name: ${company.name}` +
-        `\nIndustry: ${company.industry?.[0]?.name || "N/A"}` +
-        `\nDescription: ${company.description || "N/A"}` +
-        `\nWebsite: ${company.website || "N/A"}`;
-
-      setAiDescription(descriptionText);
-      setLoadingCompany(false);
-    }
-
-    fetchCompany();
-  }, [clientCompanyId]);
-
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
     const result = await addTargetCompany({
@@ -199,7 +165,6 @@ export function AddTargetCompanyForm({
     setIsSubmitting(true);
 
     try {
-      // createClient() from the browser client is synchronous — no await
       const supabase = createClient();
       const {
         data: { user },
