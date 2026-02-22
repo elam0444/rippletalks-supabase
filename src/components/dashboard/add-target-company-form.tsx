@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import {
   Form,
   FormControl,
@@ -89,8 +88,6 @@ export function AddTargetCompanyForm({
   availableCompanies,
   categories,
 }: AddTargetCompanyFormProps) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [companyPopoverOpen, setCompanyPopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -189,7 +186,6 @@ export function AddTargetCompanyForm({
       );
 
       toast.success(`Generated ${result.length} target companies!`);
-      startTransition(() => router.refresh());
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate target companies.");
