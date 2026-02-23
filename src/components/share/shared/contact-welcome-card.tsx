@@ -16,8 +16,12 @@ export function ContactWelcomeCard({ contact }: ContactWelcomeCardProps) {
           <User className="h-6 w-6 text-gray-400" />
         </div>
         <h2 className="text-lg font-semibold text-gray-900">
-          Welcome, {contact.name}!
+          Hello, {contact.name}, welcome to Ripple! 👋
         </h2>
+        <p>
+          We&apos;re excited to have you as a speaker. Just fill out a few details
+          below so we can get your talk scheduled and set everything up for you.
+        </p>
       </div>
     </div>
   );

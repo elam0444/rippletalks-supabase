@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ripple Talk",
-  description: "Connect and communicate",
+  title: "Ripple Talks",
+  description: "For over a decade, Ripple’s founders—alumni of Y Combinator and Techstars—have hosted conversations for their venture-backed founder networks of 20,000.",
 };
 
 export default function RootLayout({
