@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Building2, Target, Pencil, Users } from "lucide-react";
+import { ArrowLeft, Building2, Target, Pencil, Users, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompanyForm } from "@/components/dashboard/company-form";
 import { DeleteCompanyDialog } from "@/components/dashboard/delete-company-dialog";
@@ -38,7 +38,7 @@ import {
   getRelationshipCategories,
   getAvailableCompaniesToTarget,
 } from "@/lib/actions/target-company";
-import ContactDatesModal from "@/components/dashboard/contact-dates-modal"; // we'll create this
+import ContactDatesModal from "@/components/dashboard/contact-dates-modal";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -56,17 +56,14 @@ export default async function CompanyDetailPage({ params }: PageProps) {
     redirect("/login");
   }
 
-  // Fetch the company details
   const company = await getCompanyById(id);
 
   if (!company) {
     notFound();
   }
 
-  // Fetch industries for the edit form
   const industries = await getIndustries();
 
-  // Fetch relationship categories, available companies, and contacts
   const [categories, availableCompanies, contacts, availableContacts] =
     await Promise.all([
       getRelationshipCategories(),
@@ -75,7 +72,6 @@ export default async function CompanyDetailPage({ params }: PageProps) {
       getAvailableContacts(id),
     ]);
 
-  // Fetch target companies for this company (as client_company)
   const { data: targetCompanies } = await supabase
     .from("target_companies")
     .select(
@@ -103,10 +99,57 @@ export default async function CompanyDetailPage({ params }: PageProps) {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
+  // Fetch selected dates for all contacts of this company
+  const { data: selectedDates } = await supabase
+    .from("contact_available_dates")
+    .select(
+      `
+      id,
+      available_date,
+      is_selected,
+      contact:contact_id (
+        id,
+        name,
+        avatar_url
+      )
+    `,
+    )
+    .eq("company_id", id)
+    .order("available_date", { ascending: true });
+
+  // Group dates by contact
+  const datesByContact = (selectedDates ?? []).reduce(
+    (acc, row) => {
+      const contact = row.contact as unknown as {
+        id: string;
+        name: string;
+        avatar_url: string | null;
+      } | null;
+      if (!contact) return acc;
+      if (!acc[contact.id]) {
+        acc[contact.id] = { contact, dates: [] };
+      }
+      acc[contact.id].dates.push({
+        date: new Date(row.available_date),
+        is_selected: row.is_selected as boolean,
+      });
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        contact: { id: string; name: string; avatar_url: string | null };
+        dates: { date: Date; is_selected: boolean }[];
+      }
+    >,
+  );
+
+  const groupedDates = Object.values(datesByContact);
+
   return (
     <div className="min-h-screen p-6">
       <div className="mx-auto max-w-6xl space-y-6">
-        {/* Back button and header */}
+        {/* Back button */}
         <div className="flex items-center gap-4">
           <Link href="/dashboard">
             <Button variant="ghost" size="sm" className="gap-2">
@@ -245,14 +288,14 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
+                          <ContactDatesModal
+                            contactId={contact.id}
+                            companyId={company.id}
+                          />
                           <ShareContactButton
                             contactId={contact.id}
                             companyId={company.id}
                             contactName={contact.name}
-                          />
-                          <ContactDatesModal
-                            contactId={contact.id}
-                            companyId={company.id}
                           />
                           <EditContactForm
                             contactId={contact.id}
@@ -377,11 +420,14 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                             className="text-xs text-muted-foreground"
                             title={new Date(target.updated_at).toLocaleString()}
                           >
-                            {new Date(target.updated_at).toLocaleDateString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                            {new Date(target.updated_at).toLocaleDateString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -416,6 +462,92 @@ export default async function CompanyDetailPage({ params }: PageProps) {
             ) : (
               <div className="py-8 text-center text-muted-foreground">
                 No target companies found for {company.name}.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Selected Dates Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Selected Availability Dates
+            </CardTitle>
+            <CardDescription>
+              Dates contacts at {company.name} are available
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {groupedDates.length > 0 ? (
+              <div className="space-y-6">
+                {groupedDates.map(({ contact, dates }, index) => (
+                  <div key={contact.id}>
+                    {/* Contact header */}
+                    <div className="flex items-center gap-2 mb-3">
+                      {contact.avatar_url ? (
+                        <Image
+                          src={contact.avatar_url}
+                          alt={contact.name}
+                          width={28}
+                          height={28}
+                          className="h-7 w-7 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted">
+                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <span className="text-sm font-medium">{contact.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({dates.length} {dates.length === 1 ? "slot" : "slots"})
+                      </span>
+                    </div>
+
+                    {/* Date chips */}
+                    <div className="flex flex-wrap gap-2">
+                      {dates.map(({ date, is_selected }) => (
+                        <span
+                          key={date.toISOString()}
+                          className="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium"
+                        >
+                          <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                          {date.toLocaleDateString(undefined, {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                          <span className="text-muted-foreground">
+                            {date.toLocaleTimeString(undefined, {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                          {is_selected ? (
+                            <span className="ml-1 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                              ✓ Selected
+                            </span>
+                          ) : (
+                            <span className="ml-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                              Pending
+                            </span>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Divider between contacts */}
+                    {index < groupedDates.length - 1 && (
+                      <div className="mt-4 border-t" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                No availability dates have been selected for contacts at{" "}
+                {company.name}.
               </div>
             )}
           </CardContent>

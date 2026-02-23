@@ -212,3 +212,7 @@ export async function getCompanyById(id: string) {
 
   return data
 }
+
+export async function revalidateCompanyPage(companyId: string) {
+  revalidatePath(`/dashboard/companies/${companyId}`);
+}

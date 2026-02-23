@@ -112,7 +112,7 @@ export function ShareContactButton({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
         >
           <Share2 className="h-4 w-4" />
         </Button>
@@ -170,7 +170,7 @@ export function ShareContactButton({
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Share this link with others to give them access to view this contact's information. This link will remain the same each time you share this contact.
+                Share this link with others to give them access to view this contact&apos;s information. This link will remain the same each time you share this contact.
               </p>
             </div>
           ) : (
