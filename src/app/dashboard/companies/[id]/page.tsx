@@ -81,7 +81,6 @@ export default async function CompanyDetailPage({ params }: PageProps) {
       note,
       selected,
       interested,
-      updated_at,
       target_company:target_company_id (
         id,
         name,
@@ -353,8 +352,6 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                     <TableHead className="w-[300px]">Target Company</TableHead>
                     <TableHead className="w-[150px]">Category</TableHead>
                     <TableHead>Why</TableHead>
-                    <TableHead className="w-[110px]">Interested</TableHead>
-                    <TableHead className="w-[140px]">Last Activity</TableHead>
                     <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>

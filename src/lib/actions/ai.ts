@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 
 type TargetCompany = {
+  why: null;
   name: string;
   website?: string;
   description?: string;
@@ -20,6 +21,23 @@ export async function fetchTargetCompaniesFromOpenAI(
   availableCategories: string[],
 ): Promise<TargetCompany[]> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+  const exampleOutput = {
+    companies: [
+      {
+        name: "Example Company",
+        website: "https://example.com",
+        description: "A brief description of what this company does.",
+        why: "This explains why this company is relevant or complementary to the input description.",
+        industry: "Education Technology",
+        contact: {
+          name: "Partnerships Team",
+          email: "partnerships@example.com",
+        },
+        relationship_category: availableCategories[0] ?? "Partner",
+      },
+    ],
+  };
 
   const prompt = `
 You are an expert researcher. Generate a JSON array of companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
@@ -227,6 +245,15 @@ export async function saveTargetCompanies(
         .single();
 
       if (!existingTarget?.id) {
+        // Fall back to the first available category if none matched
+        const fallbackCategoryId =
+          relationshipCategoryId ?? (categories?.[0]?.id || null);
+
+        if (!fallbackCategoryId) {
+          console.error("No relationship category available, skipping insert");
+          continue;
+        }
+
         const { error: targetError } = await supabase
           .from("target_companies")
           .insert([
@@ -239,6 +266,7 @@ export async function saveTargetCompanies(
               why: c.why || null,
               selected: true,
               interested: false,
+              why: c.why || null,
             },
           ]);
 
