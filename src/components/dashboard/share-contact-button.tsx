@@ -148,7 +148,7 @@ export function ShareContactButton({
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Share this link with others to give them access to view this contact's information. This link will remain the same each time you share this contact.
+                Share this link with others to give them access to view this contact&apos;s information. This link will remain the same each time you share this contact.
               </p>
             </div>
           ) : (

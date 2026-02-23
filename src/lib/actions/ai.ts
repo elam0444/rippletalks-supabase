@@ -5,13 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 
 type TargetCompany = {
-  why: null;
   name: string;
   website?: string;
   description?: string;
   industry?: string;
   contact?: { email?: string; name?: string; title?: string } | null;
   relationship_category?: string;
+  why?: string | null,
 };
 
 // Call OpenAI to get companies with category suggestion
@@ -39,7 +39,7 @@ export async function fetchTargetCompaniesFromOpenAI(
   };
 
   const prompt = `
-You are an expert researcher. Generate a list of maximum 20 companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
+You are an expert researcher. Generate a JSON array of companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
 "${description}"
 
 Each company should include:
@@ -60,6 +60,7 @@ Example output format:
       "website": "https://acmecorp.com",
       "description": "A leading provider of cloud infrastructure solutions for mid-market enterprises.",
       "industry": "Cloud Computing",
+      "why": "This company is important because..."
       "contact": {
         "name": "Jane Smith",
         "title": "Head of Partnerships",
@@ -72,6 +73,7 @@ Example output format:
       "website": "https://brightventures.io",
       "description": "Early-stage VC fund focused on B2B SaaS startups.",
       "industry": "Venture Capital",
+      "why": "This company is important because..."
       "contact": {
         "name": "Tom Nguyen",
         "title": "General Partner",
@@ -201,18 +203,16 @@ export async function saveTargetCompanies(
 
     // --- 2. Handle contact (separate model, linked via company_id) ---
     if (c.contact?.email) {
-      const { error: contactError } = await supabase
-        .from("contacts")
-        .upsert(
-          {
-            company_id: companyId,
-            email: c.contact.email,
-            name: c.contact.name || null,
-            title: c.contact.title || null,
-            added_by_profile_id: addedByProfileId,
-          },
-          { onConflict: "email", ignoreDuplicates: true },
-        );
+      const { error: contactError } = await supabase.from("contacts").upsert(
+        {
+          company_id: companyId,
+          email: c.contact.email,
+          name: c.contact.name || null,
+          title: c.contact.title || null,
+          added_by_profile_id: addedByProfileId,
+        },
+        { onConflict: "email", ignoreDuplicates: false },
+      );
 
       if (contactError) {
         console.error("Error upserting contact:", contactError);
@@ -262,9 +262,9 @@ export async function saveTargetCompanies(
               profile_id: addedByProfileId,
               added_by_profile_id: addedByProfileId,
               relationship_category: fallbackCategoryId,
+              why: c.why || null,
               selected: true,
               interested: false,
-              why: c.why || null,
             },
           ]);
 

@@ -14,14 +14,8 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import {
-  format,
-  isToday,
-  isBefore,
-  startOfMinute,
-  addMonths,
-  subMonths,
-} from "date-fns";
+import { format, isToday, isBefore, startOfMinute } from "date-fns";
+import { revalidateCompanyPage } from "@/lib/actions/company";
 
 interface ContactDatesModalProps {
   contactId: string;
@@ -110,6 +104,7 @@ export default function ContactDatesModal({
         .insert(inserts);
 
       if (error) throw error;
+      await revalidateCompanyPage(companyId);
     } catch (err) {
       console.error("Error saving dates:", err);
     } finally {

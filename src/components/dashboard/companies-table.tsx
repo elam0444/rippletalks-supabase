@@ -15,6 +15,7 @@ type Company = {
   logo_url: any;
   description: any;
   industries: any;
+  updated_at: any;
 };
 
 // Function to generate consistent color for each industry

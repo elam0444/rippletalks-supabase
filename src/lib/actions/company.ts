@@ -153,6 +153,7 @@ export async function getCompanies() {
       logo_url,
       website,
       description,
+      updated_at,
       industries (
         name
       )
@@ -211,4 +212,8 @@ export async function getCompanyById(id: string) {
   }
 
   return data
+}
+
+export async function revalidateCompanyPage(companyId: string) {
+  revalidatePath(`/dashboard/companies/${companyId}`);
 }
