@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { Company } from "@/types/share";
@@ -18,15 +12,11 @@ interface WhyNoteDialogProps {
   onSave: (why: string, note: string) => Promise<void>;
 }
 
-/**
- * Dialog for editing "Why" and "Note" fields for a company
- */
 export function WhyNoteDialog({ company, onClose, onSave }: WhyNoteDialogProps) {
   const [whyText, setWhyText] = useState("");
   const [noteText, setNoteText] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Update state when company changes
   useEffect(() => {
     if (company) {
       setWhyText(company.why ?? "");
@@ -46,20 +36,46 @@ export function WhyNoteDialog({ company, onClose, onSave }: WhyNoteDialogProps) 
     }
   };
 
+  const isOpen = !!company;
+
   return (
-    <Dialog open={!!company} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Why — {company?.name}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 pt-2">
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Slide panel */}
+      <div
+        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] bg-white shadow-xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h2 className="text-base font-semibold text-gray-900">
+            Why — {company?.name}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           <div>
             <label className="text-sm font-medium text-gray-700">Why</label>
             <Textarea
               placeholder="Why this company?"
               value={whyText}
               onChange={(e) => setWhyText(e.target.value)}
-              className="mt-1 min-h-20"
+              className="mt-1 min-h-28"
             />
           </div>
           <div>
@@ -68,11 +84,13 @@ export function WhyNoteDialog({ company, onClose, onSave }: WhyNoteDialogProps) 
               placeholder="Optional note"
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
-              className="mt-1 min-h-[60px]"
+              className="mt-1 min-h-[72px]"
             />
           </div>
         </div>
-        <div className="flex justify-end gap-2 pt-4">
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 px-6 py-4 border-t">
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
@@ -81,7 +99,7 @@ export function WhyNoteDialog({ company, onClose, onSave }: WhyNoteDialogProps) 
             {saving ? "Saving…" : "Save"}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </>
   );
 }

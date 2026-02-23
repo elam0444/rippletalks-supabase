@@ -11,7 +11,7 @@ type TargetCompany = {
   industry?: string;
   contact?: { email?: string; name?: string; title?: string } | null;
   relationship_category?: string;
-  why?: string,
+  why?: string;
 };
 
 // Call OpenAI to get companies with category suggestion
@@ -22,7 +22,7 @@ export async function fetchTargetCompaniesFromOpenAI(
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const prompt = `
-You are an expert researcher. Generate a JSON array of companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
+You are an expert researcher. Generate a JSON array of 2 companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
 "${description}"
 
 Each company should include:
@@ -187,19 +187,43 @@ export async function saveTargetCompanies(
 
     // --- 2. Handle contact (separate model, linked via company_id) ---
     if (c.contact?.email) {
-      const { error: contactError } = await supabase.from("contacts").upsert(
-        {
-          company_id: companyId,
-          email: c.contact.email,
-          name: c.contact.name || null,
-          title: c.contact.title || null,
-          added_by_profile_id: addedByProfileId,
-        },
-        { onConflict: "email", ignoreDuplicates: false },
-      );
+      // Check if contact already exists by email
+      const { data: existingContact } = await supabase
+        .from("contacts")
+        .select("id")
+        .eq("email", c.contact.email)
+        .single();
 
-      if (contactError) {
-        console.error("Error upserting contact:", contactError);
+      if (existingContact?.id) {
+        // Update existing contact with the new company_id and details
+        const { error: contactUpdateError } = await supabase
+          .from("contacts")
+          .update({
+            company_id: companyId,
+            name: c.contact.name || null,
+            title: c.contact.title || null,
+            added_by_profile_id: addedByProfileId,
+          })
+          .eq("id", existingContact.id);
+
+        if (contactUpdateError) {
+          console.error("Error updating contact:", contactUpdateError);
+        }
+      } else {
+        // Insert new contact
+        const { error: contactInsertError } = await supabase
+          .from("contacts")
+          .insert({
+            company_id: companyId,
+            email: c.contact.email,
+            name: c.contact.name || null,
+            title: c.contact.title || null,
+            added_by_profile_id: addedByProfileId,
+          });
+
+        if (contactInsertError) {
+          console.error("Error inserting contact:", contactInsertError);
+        }
       }
     }
 
