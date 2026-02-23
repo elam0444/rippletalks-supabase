@@ -30,6 +30,7 @@ Each company should include:
 - website (if available)
 - description
 - industry
+- why
 - a contact object with "name" (first and last name only, no title), "title" (job title separately), and "email" fields for a person who could be useful for outreach
 - a relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
 
