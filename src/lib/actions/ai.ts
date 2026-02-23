@@ -6,6 +6,7 @@ import OpenAI from "openai";
 
 type TargetCompany = {
   name: string;
+  legal_name: string;
   website?: string;
   description?: string;
   industry?: string;
@@ -18,6 +19,7 @@ type TargetCompany = {
 export async function fetchTargetCompaniesFromOpenAI(
   description: string,
   availableCategories: string[],
+  availableIndustries: string[],
 ): Promise<TargetCompany[]> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -27,9 +29,10 @@ You are an expert researcher. Generate a JSON array of companies that are relate
 
 Each company should include:
 - name
+- legal_name (if available)
 - website (if available)
 - description
-- industry
+- industry (must use exactly this key name) from the following options: ${availableIndustries.join(", ")}
 - why
 - a contact object with "name" (first and last name only, no title), "title" (job title separately), and "email" fields for a person who could be useful for outreach
 - a relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
@@ -41,6 +44,7 @@ Example output format:
   "companies": [
     {
       "name": "Acme Corp",
+      "legal_name": "Acme Inc."
       "website": "https://acmecorp.com",
       "description": "A leading provider of cloud infrastructure solutions for mid-market enterprises.",
       "industry": "Cloud Computing",
@@ -54,6 +58,7 @@ Example output format:
     },
     {
       "name": "Bright Ventures",
+      "legal_name": "ABC Inc.",
       "website": "https://brightventures.io",
       "description": "Early-stage VC fund focused on B2B SaaS startups.",
       "industry": "Venture Capital",
@@ -167,6 +172,7 @@ export async function saveTargetCompanies(
         .insert([
           {
             name: c.name,
+            legal_name: c.legal_name || null,
             website: c.website || null,
             description: c.description || null,
             industry_id: industryId,
@@ -187,6 +193,10 @@ export async function saveTargetCompanies(
 
     // --- 2. Handle contact (separate model, linked via company_id) ---
     if (c.contact?.email) {
+      console.log("Attempting contact save:", {
+        company_id: companyId,
+        email: c.contact.email,
+      });
       // Check if contact already exists by email
       const { data: existingContact } = await supabase
         .from("contacts")
@@ -294,9 +304,13 @@ export async function createTargetCompaniesFromDescription(
     .select("name");
   const categoryNames = categories?.map((c) => c.name) || [];
 
+  const { data: industries } = await supabase.from("industries").select("name");
+  const industryNames = industries?.map((i) => i.name) || [];
+
   const companies = await fetchTargetCompaniesFromOpenAI(
     description,
     categoryNames,
+    industryNames,
   );
 
   const saved = await saveTargetCompanies(

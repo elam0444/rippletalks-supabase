@@ -20,7 +20,7 @@ export async function Navbar() {
             width={40}
             height={40}
           />
-          <span className='font-semibold text-lg'>Ripple Talk</span>
+          <span className='font-semibold text-lg'>Ripple Talks</span>
         </Link>
 
         {/* <div className="flex items-center gap-4">
