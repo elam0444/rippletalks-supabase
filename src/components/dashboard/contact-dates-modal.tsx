@@ -14,7 +14,14 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { format, isToday, isBefore, startOfMinute } from "date-fns";
+import {
+  format,
+  isToday,
+  isBefore,
+  startOfMinute,
+  addMonths,
+  subMonths,
+} from "date-fns";
 
 interface ContactDatesModalProps {
   contactId: string;
@@ -114,22 +121,25 @@ export default function ContactDatesModal({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline' size='sm'>
-          <CalendarIcon className='h-4 w-4 mr-1' />
-          Dates
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          <CalendarIcon className="h-4 w-4 mr-1" />
         </Button>
       </DialogTrigger>
 
-      <DialogContent className='max-w-2xl'>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Select Available Dates & Times</DialogTitle>
         </DialogHeader>
 
-        <div className='grid grid-cols-[1fr_240px] gap-6 py-4'>
-          <div className='space-y-2'>
+        <div className="grid grid-cols-[1fr_240px] gap-6 py-4">
+          <div className="space-y-2">
             <DayPicker
-              mode='multiple'
-              captionLayout='dropdown'
+              mode="multiple"
+              captionLayout="dropdown"
               month={month}
               onMonthChange={setMonth}
               selected={selectedDates}
@@ -140,9 +150,9 @@ export default function ContactDatesModal({
             />
           </div>
 
-          <div className='space-y-4 max-h-[330px] overflow-y-auto pr-2'>
+          <div className="space-y-4 max-h-[330px] overflow-y-auto pr-2">
             {selectedDates.length === 0 && (
-              <p className='text-sm text-muted-foreground'>
+              <p className="text-sm text-muted-foreground">
                 Select a date to see time slots
               </p>
             )}
@@ -152,23 +162,23 @@ export default function ContactDatesModal({
               const isEditing = activeIndex === index;
 
               return (
-                <div key={date.toISOString()} className='space-y-2'>
-                  <div className='flex items-center justify-between'>
-                    <div className='text-sm font-medium'>
+                <div key={date.toISOString()} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium">
                       {format(date, "PPP")}
                     </div>
 
                     <button
-                      type='button'
+                      type="button"
                       onClick={() => setActiveIndex(index)}
-                      className='text-sm text-muted-foreground hover:text-foreground flex items-center gap-1'
+                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
                     >
                       🕘 {selectedTime}
                     </button>
                   </div>
 
                   {isEditing && (
-                    <div className='max-h-64 overflow-y-auto border rounded-xl p-2 space-y-1'>
+                    <div className="max-h-64 overflow-y-auto border rounded-xl p-2 space-y-1">
                       {TIME_SLOTS.map((time) => {
                         const selected = selectedTime === time;
                         const disabled = isTimeDisabled(date, time);
@@ -176,11 +186,11 @@ export default function ContactDatesModal({
                         return (
                           <button
                             key={time}
-                            type='button'
+                            type="button"
                             disabled={disabled}
                             onClick={() => {
                               handleTimeChange(index, time);
-                              setActiveIndex(null);
+                              setActiveIndex(null); // 👈 close selector after pick
                             }}
                             className={`w-full px-3 py-2 rounded-lg text-left text-sm transition
                   ${
