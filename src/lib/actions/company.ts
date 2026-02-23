@@ -153,6 +153,7 @@ export async function getCompanies() {
       logo_url,
       website,
       description,
+      updated_at,
       industries (
         name
       )
