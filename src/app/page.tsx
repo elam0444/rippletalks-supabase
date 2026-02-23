@@ -21,7 +21,7 @@ export default async function Home() {
             height={150}
           />
           <h1 className='text-4xl font-bold tracking-tight'>
-            Welcome to Ripple Talk
+            Welcome to Ripple Talks
           </h1>
         </div>
 
