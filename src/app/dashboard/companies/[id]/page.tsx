@@ -81,6 +81,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
       note,
       selected,
       interested,
+      updated_at,
       target_company:target_company_id (
         id,
         name,
@@ -362,6 +363,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                       name: string;
                       logo_url: string | null;
                       website: string | null;
+                      updated_at: string | null;
                     } | null;
                     const category = target.category as unknown as {
                       id: string;

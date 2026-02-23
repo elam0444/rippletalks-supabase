@@ -5,14 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 
 type TargetCompany = {
-  why: null;
   name: string;
   website?: string;
   description?: string;
   industry?: string;
   contact?: { email?: string; name?: string; title?: string } | null;
   relationship_category?: string;
-  why?: string,
+  why?: string | null,
 };
 
 // Call OpenAI to get companies with category suggestion
@@ -266,7 +265,6 @@ export async function saveTargetCompanies(
               why: c.why || null,
               selected: true,
               interested: false,
-              why: c.why || null,
             },
           ]);
 
