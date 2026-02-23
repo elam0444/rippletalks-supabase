@@ -16,7 +16,7 @@ export function ContactWelcomeCard({ contact }: ContactWelcomeCardProps) {
           Hello {contact.name}, welcome to Ripple! 👋
         </h2>
       </div>
-      <p className="text-sm text-gray-600 leading-relaxed">
+      <p className="text-base text-gray-600">
         We&apos;re excited to have you as a speaker. Just fill out a few details
         below so we can get your talk scheduled and set everything up for you.
       </p>
