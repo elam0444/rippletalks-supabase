@@ -138,7 +138,6 @@ export function AddTargetCompanyForm({
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
-
     const result = await addTargetCompany({
       client_company_id: clientCompanyId,
       target_company_id: values.target_company_id,
@@ -146,7 +145,6 @@ export function AddTargetCompanyForm({
       why: values.why || null,
       note: values.note || null,
     });
-
     setIsSubmitting(false);
 
     if (result.success) {
