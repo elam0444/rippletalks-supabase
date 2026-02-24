@@ -29,8 +29,7 @@ import { Button } from "@/components/ui/button";
 import { CompanyForm } from "@/components/dashboard/company-form";
 import { DeleteCompanyDialog } from "@/components/dashboard/delete-company-dialog";
 import { AddTargetCompanyForm } from "@/components/dashboard/add-target-company-form";
-import { EditTargetCompanyForm } from "@/components/dashboard/edit-target-company-form";
-import { RemoveTargetCompanyButton } from "@/components/dashboard/remove-target-company-button";
+import { TargetCompaniesTable } from "@/components/dashboard/target-companies-table";
 import { AddContactForm } from "@/components/dashboard/add-contact-form";
 import { EditContactForm } from "@/components/dashboard/edit-contact-form";
 import { RemoveContactButton } from "@/components/dashboard/remove-contact-button";
@@ -93,7 +92,8 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         id,
         name,
         logo_url,
-        website
+        website,
+        description
       ),
       relationship_category,
       category:relationship_category (
@@ -154,43 +154,45 @@ export default async function CompanyDetailPage({ params }: PageProps) {
   const groupedDates = Object.values(datesByContact);
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <div className='min-h-screen p-6'>
+      <div className='mx-auto max-w-6xl space-y-6'>
         {/* Back button */}
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
+        <div className='flex items-center gap-4'>
+          <Link href='/dashboard'>
+            <Button variant='ghost' size='sm' className='gap-2'>
+              <ArrowLeft className='h-4 w-4' />
               Back
             </Button>
           </Link>
         </div>
 
         {/* Company Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center gap-4'>
             {company.logo_url ? (
               <Image
                 src={company.logo_url}
                 alt={company.name}
-                className="h-16 w-16 rounded-lg object-cover"
+                width={64}
+                height={64}
+                className='h-16 w-16 rounded-lg object-cover'
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
-                <Building2 className="h-8 w-8 text-muted-foreground" />
+              <div className='flex h-16 w-16 items-center justify-center rounded-lg bg-muted'>
+                <Building2 className='h-8 w-8 text-muted-foreground' />
               </div>
             )}
             <div>
-              <h1 className="text-2xl font-bold">{company.name}</h1>
-              <p className="text-muted-foreground">
+              <h1 className='text-2xl font-bold'>{company.name}</h1>
+              <p className='text-muted-foreground'>
                 {/* @ts-expect-error - Supabase returns single object for foreign key relation */}
                 {company.industries?.name || "No industry"}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <CompanyForm
-              mode="edit"
+              mode='edit'
               industries={industries}
               initialData={{
                 id: company.id,
@@ -202,8 +204,8 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 industry_id: company.industry_id,
               }}
               trigger={
-                <Button variant="outline" size="sm">
-                  <Pencil className="h-4 w-4 mr-2" />
+                <Button variant='outline' size='sm'>
+                  <Pencil className='h-4 w-4 mr-2' />
                   Edit
                 </Button>
               }
@@ -218,15 +220,15 @@ export default async function CompanyDetailPage({ params }: PageProps) {
 
         {/* Contacts Table */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className='flex flex-row items-center justify-between'>
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+              <CardTitle className='flex items-center gap-2'>
+                <Users className='h-5 w-5' />
                 Contacts
               </CardTitle>
               <CardDescription>People at {company.name}</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className='flex items-center gap-2'>
               <AttachContactForm
                 companyId={company.id}
                 companyName={company.name}
@@ -242,9 +244,9 @@ export default async function CompanyDetailPage({ params }: PageProps) {
             {contacts && contacts.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[250px]">Name</TableHead>
-                    <TableHead className="w-[150px]">Title</TableHead>
+                  <TableRow className='bg-muted/50'>
+                    <TableHead className='w-[250px]'>Name</TableHead>
+                    <TableHead className='w-[150px]'>Title</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead className="w-[150px]">Panelist Type</TableHead>
                     <TableHead className="w-[150px]">Phone</TableHead>
@@ -255,25 +257,25 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                   {contacts.map((contact) => (
                     <TableRow key={contact.id}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
+                        <div className='flex items-center gap-3'>
                           {contact.avatar_url ? (
                             <Image
                               src={contact.avatar_url}
                               alt={contact.name}
                               width={32}
                               height={32}
-                              className="h-8 w-8 rounded-full object-cover"
+                              className='h-8 w-8 rounded-full object-cover'
                             />
                           ) : (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                              <Users className="h-4 w-4 text-muted-foreground" />
+                            <div className='flex h-8 w-8 items-center justify-center rounded-full bg-muted'>
+                              <Users className='h-4 w-4 text-muted-foreground' />
                             </div>
                           )}
-                          <span className="font-medium">{contact.name}</span>
+                          <span className='font-medium'>{contact.name}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-muted-foreground">
+                        <span className='text-muted-foreground'>
                           {contact.title || "—"}
                         </span>
                       </TableCell>
@@ -281,12 +283,12 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                         {contact.email ? (
                           <a
                             href={`mailto:${contact.email}`}
-                            className="text-primary hover:underline"
+                            className='text-primary hover:underline'
                           >
                             {contact.email}
                           </a>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className='text-muted-foreground'>—</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -305,7 +307,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className='flex items-center gap-1'>
                           <ContactDatesModal
                             contactId={contact.id}
                             companyId={company.id}
@@ -339,7 +341,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 </TableBody>
               </Table>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
+              <div className='py-8 text-center text-muted-foreground'>
                 No contacts found for {company.name}.
               </div>
             )}
@@ -348,10 +350,10 @@ export default async function CompanyDetailPage({ params }: PageProps) {
 
         {/* Target Companies Table */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className='flex flex-row items-center justify-between'>
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
+              <CardTitle className='flex items-center gap-2'>
+                <Target className='h-5 w-5' />
                 Target Companies
               </CardTitle>
               <CardDescription>
@@ -365,132 +367,30 @@ export default async function CompanyDetailPage({ params }: PageProps) {
             />
           </CardHeader>
           <CardContent>
-            {targetCompanies && targetCompanies.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[300px]">Target Company</TableHead>
-                    <TableHead className="w-[150px]">Category</TableHead>
-                    <TableHead>Why</TableHead>
-                    <TableHead className="w-[110px]">Interested</TableHead>
-                    <TableHead className="w-[140px]">Last Activity</TableHead>
-                    <TableHead className="w-[100px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {targetCompanies.map((target) => {
-                    const targetCompany = target.target_company as unknown as {
-                      id: string;
-                      name: string;
-                      logo_url: string | null;
-                      website: string | null;
-                    } | null;
-                    const category = target.category as unknown as {
-                      id: string;
-                      name: string;
-                    } | null;
-
-                    return (
-                      <TableRow key={target.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {targetCompany?.logo_url ? (
-                              <Image
-                                src={targetCompany.logo_url}
-                                alt={targetCompany.name}
-                                className="h-8 w-8 rounded object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-                                <Building2 className="h-4 w-4 text-muted-foreground" />
-                              </div>
-                            )}
-                            <span className="font-medium">
-                              {targetCompany?.name || "Unknown"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
-                            {category?.name || "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="max-w-[400px]">
-                          <p
-                            className="truncate text-muted-foreground"
-                            title={target.why || ""}
-                          >
-                            {target.why || "—"}
-                          </p>
-                        </TableCell>
-                        <TableCell>
-                          {target.selected ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                              ✓ Selected
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                              Passed
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className="text-xs text-muted-foreground"
-                            title={new Date(target.updated_at).toLocaleString()}
-                          >
-                            {new Date(target.updated_at).toLocaleDateString(
-                              undefined,
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              },
-                            )}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <EditTargetCompanyForm
-                              targetId={target.id}
-                              clientCompanyId={company.id}
-                              targetCompanyName={
-                                targetCompany?.name || "Unknown"
-                              }
-                              categories={categories}
-                              initialData={{
-                                relationship_category: category?.id || "",
-                                why: target.why,
-                                note: target.note,
-                              }}
-                            />
-                            <RemoveTargetCompanyButton
-                              targetId={target.id}
-                              clientCompanyId={company.id}
-                              targetCompanyName={
-                                targetCompany?.name || "Unknown"
-                              }
-                            />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                No target companies found for {company.name}.
-              </div>
-            )}
+            <TargetCompaniesTable
+              targetCompanies={(targetCompanies ?? []).map((t) => ({
+                ...t,
+                target_company: t.target_company as unknown as {
+                  id: string;
+                  name: string;
+                  logo_url?: string | null;
+                  website?: string | null;
+                  description?: string | null;
+                } | null,
+                category: t.category as unknown as { id: string; name: string } | null,
+              }))}
+              clientCompanyId={company.id}
+              clientCompanyName={company.name}
+              categories={categories}
+            />
           </CardContent>
         </Card>
 
         {/* Selected Dates Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
+            <CardTitle className='flex items-center gap-2'>
+              <CalendarDays className='h-5 w-5' />
               Selected Availability Dates
             </CardTitle>
             <CardDescription>
@@ -499,58 +399,58 @@ export default async function CompanyDetailPage({ params }: PageProps) {
           </CardHeader>
           <CardContent>
             {groupedDates.length > 0 ? (
-              <div className="space-y-6">
+              <div className='space-y-6'>
                 {groupedDates.map(({ contact, dates }, index) => (
                   <div key={contact.id}>
                     {/* Contact header */}
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className='flex items-center gap-2 mb-3'>
                       {contact.avatar_url ? (
                         <Image
                           src={contact.avatar_url}
                           alt={contact.name}
                           width={28}
                           height={28}
-                          className="h-7 w-7 rounded-full object-cover"
+                          className='h-7 w-7 rounded-full object-cover'
                         />
                       ) : (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted">
-                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                        <div className='flex h-7 w-7 items-center justify-center rounded-full bg-muted'>
+                          <Users className='h-3.5 w-3.5 text-muted-foreground' />
                         </div>
                       )}
-                      <span className="text-sm font-medium">
+                      <span className='text-sm font-medium'>
                         {contact.name}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className='text-xs text-muted-foreground'>
                         ({dates.length} {dates.length === 1 ? "slot" : "slots"})
                       </span>
                     </div>
 
                     {/* Date chips */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className='flex flex-wrap gap-2'>
                       {dates.map(({ date, is_selected }) => (
                         <span
                           key={date.toISOString()}
-                          className="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium"
+                          className='inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium'
                         >
-                          <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                          <CalendarDays className='h-3 w-3 text-muted-foreground' />
                           {date.toLocaleDateString(undefined, {
                             weekday: "short",
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                           })}
-                          <span className="text-muted-foreground">
+                          <span className='text-muted-foreground'>
                             {date.toLocaleTimeString(undefined, {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
                           </span>
                           {is_selected ? (
-                            <span className="ml-1 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                            <span className='ml-1 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700'>
                               ✓ Selected
                             </span>
                           ) : (
-                            <span className="ml-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                            <span className='ml-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground'>
                               Pending
                             </span>
                           )}
@@ -560,13 +460,13 @@ export default async function CompanyDetailPage({ params }: PageProps) {
 
                     {/* Divider between contacts */}
                     {index < groupedDates.length - 1 && (
-                      <div className="mt-4 border-t" />
+                      <div className='mt-4 border-t' />
                     )}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
+              <div className='py-8 text-center text-muted-foreground'>
                 No availability dates have been selected for contacts at{" "}
                 {company.name}.
               </div>
