@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { truncateText } from "@/lib/utils/text-utils";
+import { getLogoDevUrl } from "@/lib/utils/logo-utils";
 
 type Company = {
   id: any;
@@ -19,6 +21,38 @@ type Company = {
   industries: any;
   updated_at: any;
 };
+
+function CompanyLogo({
+  name,
+  logoUrl,
+  website,
+}: {
+  name: string;
+  logoUrl?: string | null;
+  website?: string | null;
+}) {
+  const [error, setError] = useState(false);
+  const src = !error ? (logoUrl || getLogoDevUrl(website)) : null;
+
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt={name}
+        width={32}
+        height={32}
+        className="h-8 w-8 rounded object-cover shrink-0"
+        onError={() => setError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted shrink-0">
+      <Building2 className="h-4 w-4 text-muted-foreground" />
+    </div>
+  );
+}
 
 const columns: ColumnDef<Company>[] = [
   {
@@ -31,19 +65,11 @@ const columns: ColumnDef<Company>[] = [
           href={`/dashboard/companies/${company.id}`}
           className="flex items-center gap-3 font-medium hover:text-primary min-w-0"
         >
-          {company.logo_url ? (
-            <Image
-              src={company.logo_url}
-              alt={company.name}
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded object-cover shrink-0"
-            />
-          ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-muted shrink-0">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </div>
-          )}
+          <CompanyLogo
+            name={company.name}
+            logoUrl={company.logo_url}
+            website={company.website}
+          />
           <span className="truncate">{company.name}</span>
         </Link>
       );
