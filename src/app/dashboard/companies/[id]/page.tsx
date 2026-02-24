@@ -17,7 +17,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Building2, Target, Pencil, Users, CalendarDays } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Target,
+  Pencil,
+  Users,
+  CalendarDays,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompanyForm } from "@/components/dashboard/company-form";
 import { DeleteCompanyDialog } from "@/components/dashboard/delete-company-dialog";
@@ -241,8 +248,9 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                     <TableHead className='w-[250px]'>Name</TableHead>
                     <TableHead className='w-[150px]'>Title</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead className='w-[150px]'>Phone</TableHead>
-                    <TableHead className='w-[100px]'></TableHead>
+                    <TableHead className="w-[150px]">Panelist Type</TableHead>
+                    <TableHead className="w-[150px]">Phone</TableHead>
+                    <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -284,7 +292,17 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className='text-muted-foreground'>
+                        <span className="text-muted-foreground">
+                          {(Array.isArray(contact.panelist_types)
+                            ? contact.panelist_types[0]
+                            : (contact.panelist_types as {
+                                name: string;
+                              } | null)
+                          )?.name || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-muted-foreground">
                           {contact.phone || "—"}
                         </span>
                       </TableCell>
@@ -308,6 +326,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                               title: contact.title,
                               phone: contact.phone,
                               avatar_url: contact.avatar_url,
+                              panelist_type_id: contact.panelist_type_id,
                             }}
                           />
                           <RemoveContactButton

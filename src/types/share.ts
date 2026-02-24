@@ -19,6 +19,7 @@ export interface Contact {
   title?: string;
   phone?: string;
   avatar_url?: string;
+  panelist_type?: string;
 }
 
 export interface ContactDate {
