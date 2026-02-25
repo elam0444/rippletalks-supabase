@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Building2 } from "lucide-react";
-import { getLogoDevUrl } from "@/lib/utils/logo-utils";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -19,38 +18,6 @@ import { WhyNoteDialog } from "@/components/share/company/why-note-dialog";
 import { updateTargetCompany } from "@/lib/actions/target-company";
 import { toast } from "sonner";
 import type { Company } from "@/types/share";
-
-function TargetCompanyLogo({
-  name,
-  logoUrl,
-  website,
-}: {
-  name: string;
-  logoUrl?: string | null;
-  website?: string | null;
-}) {
-  const [error, setError] = useState(false);
-  const src = !error ? (logoUrl || getLogoDevUrl(website)) : null;
-
-  if (src) {
-    return (
-      <Image
-        src={src}
-        alt={name}
-        width={32}
-        height={32}
-        className="h-8 w-8 rounded object-cover"
-        onError={() => setError(true)}
-      />
-    );
-  }
-
-  return (
-    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-      <Building2 className="h-4 w-4 text-muted-foreground" />
-    </div>
-  );
-}
 
 interface TargetCompany {
   id: string;
@@ -148,11 +115,19 @@ export function TargetCompaniesTable({
                 <TableRow key={target.id}>
                   <TableCell>
                     <div className='flex items-center gap-3'>
-                      <TargetCompanyLogo
-                        name={targetCompany?.name || "Unknown"}
-                        logoUrl={targetCompany?.logo_url}
-                        website={targetCompany?.website}
-                      />
+                      {targetCompany?.logo_url ? (
+                        <Image
+                          src={targetCompany.logo_url}
+                          alt={targetCompany.name}
+                          width={32}
+                          height={32}
+                          className='h-8 w-8 rounded object-cover'
+                        />
+                      ) : (
+                        <div className='flex h-8 w-8 items-center justify-center rounded bg-muted'>
+                          <Building2 className='h-4 w-4 text-muted-foreground' />
+                        </div>
+                      )}
                       <span className='font-medium'>
                         {targetCompany?.name || "Unknown"}
                       </span>

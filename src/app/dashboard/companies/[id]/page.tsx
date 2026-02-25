@@ -2,7 +2,6 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { CompanyLogoImage } from "@/components/dashboard/company-logo-image";
 import {
   Card,
   CardContent,
@@ -18,7 +17,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Target, Pencil, Users, CalendarDays } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Target,
+  Pencil,
+  Users,
+  CalendarDays,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompanyForm } from "@/components/dashboard/company-form";
 import { DeleteCompanyDialog } from "@/components/dashboard/delete-company-dialog";
@@ -163,14 +169,19 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         {/* Company Header */}
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-4'>
-            <CompanyLogoImage
-              name={company.name}
-              logoUrl={company.logo_url}
-              website={company.website}
-              size={64}
-              className='h-16 w-16 rounded-lg object-cover'
-              fallbackClassName='h-16 w-16 rounded-lg'
-            />
+            {company.logo_url ? (
+              <Image
+                src={company.logo_url}
+                alt={company.name}
+                width={64}
+                height={64}
+                className='h-16 w-16 rounded-lg object-cover'
+              />
+            ) : (
+              <div className='flex h-16 w-16 items-center justify-center rounded-lg bg-muted'>
+                <Building2 className='h-8 w-8 text-muted-foreground' />
+              </div>
+            )}
             <div>
               <h1 className='text-2xl font-bold'>{company.name}</h1>
               <p className='text-muted-foreground'>
@@ -237,9 +248,9 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                     <TableHead className='w-[250px]'>Name</TableHead>
                     <TableHead className='w-[150px]'>Title</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead className='w-[150px]'>Panelist Type</TableHead>
-                    <TableHead className='w-[150px]'>Phone</TableHead>
-                    <TableHead className='w-[100px]'></TableHead>
+                    <TableHead className="w-[150px]">Panelist Type</TableHead>
+                    <TableHead className="w-[150px]">Phone</TableHead>
+                    <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -281,7 +292,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className='text-muted-foreground'>
+                        <span className="text-muted-foreground">
                           {(Array.isArray(contact.panelist_types)
                             ? contact.panelist_types[0]
                             : (contact.panelist_types as {
@@ -291,7 +302,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className='text-muted-foreground'>
+                        <span className="text-muted-foreground">
                           {contact.phone || "—"}
                         </span>
                       </TableCell>
@@ -366,10 +377,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                   website?: string | null;
                   description?: string | null;
                 } | null,
-                category: t.category as unknown as {
-                  id: string;
-                  name: string;
-                } | null,
+                category: t.category as unknown as { id: string; name: string } | null,
               }))}
               clientCompanyId={company.id}
               clientCompanyName={company.name}
