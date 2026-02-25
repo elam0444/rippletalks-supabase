@@ -31,6 +31,7 @@ export function ShareClient({
   companies = [],
   clientCompanyId,
   sharedContact,
+  sharedCompany,
   contactDates: initialDates = [],
   token,
 }: Props) {
@@ -69,7 +70,9 @@ export function ShareClient({
             // Revert on failure
             setDates((prev) =>
               prev.map((d) =>
-                d.available_date === date ? { ...d, is_selected: !newValue } : d,
+                d.available_date === date
+                  ? { ...d, is_selected: !newValue }
+                  : d,
               ),
             );
           }
@@ -265,21 +268,27 @@ export function ShareClient({
   };
 
   return (
-    <div className='max-w-6xl mx-auto p-6 space-y-6'>
-      {/* Shared Contact Info */}
-      {sharedContact && <ContactWelcomeCard contact={sharedContact} />}
-
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* --- Step 1: Date Selection --- */}
       {step === 1 && (
-        <DateSelectionStep
-          dates={dates}
-          onToggleDate={toggleDate}
-          onNext={() => setStep(2)}
-        />
+        <>
+          {/* Shared Contact Info */}
+          {sharedContact && (
+            <ContactWelcomeCard
+              contact={sharedContact}
+              company={sharedCompany}
+            />
+          )}
+          <DateSelectionStep
+            dates={dates}
+            onToggleDate={toggleDate}
+            onNext={() => setStep(2)}
+          />
+        </>
       )}
 
       {/* --- Step 2: Company Selection --- */}
-      <AnimatePresence mode='wait'>
+      <AnimatePresence mode="wait">
         {step === 2 && (
           <CompanySelectionStep
             companies={companiesList}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,31 +22,44 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createContact } from "@/lib/actions/contact";
+import { getPanelistTypes } from "@/lib/actions/panelist-types";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(255),
-  email: z.email("Invalid email").optional().or(z.literal("")),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
   title: z.string().max(255).optional(),
   phone: z.string().max(50).optional(),
   avatar_url: z.string().url("Invalid URL").optional().or(z.literal("")),
+  panelist_type_id: z.string().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+interface PanelistType {
+  id: string;
+  name: string;
+}
 
 interface AddContactFormProps {
   companyId: string;
   companyName: string;
 }
 
-export function AddContactForm({
-  companyId,
-  companyName,
-}: AddContactFormProps) {
+export function AddContactForm({ companyId, companyName }: AddContactFormProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [panelistTypes, setPanelistTypes] = useState<PanelistType[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -56,8 +69,18 @@ export function AddContactForm({
       title: "",
       phone: "",
       avatar_url: "",
+      panelist_type_id: null,
     },
   });
+
+  useEffect(() => {
+    if (!open) return;
+    setLoadingTypes(true);
+    getPanelistTypes()
+      .then((data) => setPanelistTypes(data))
+      .catch(() => toast.error("Failed to load panelist types"))
+      .finally(() => setLoadingTypes(false));
+  }, [open]);
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
@@ -69,6 +92,7 @@ export function AddContactForm({
       title: values.title || null,
       phone: values.phone || null,
       avatar_url: values.avatar_url || null,
+      panelist_type_id: values.panelist_type_id || null,
     });
 
     setIsSubmitting(false);
@@ -85,12 +109,12 @@ export function AddContactForm({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size='sm'>
-          <Plus className='h-4 w-4 mr-2' />
+        <Button size="sm">
+          <Plus className="h-4 w-4 mr-2" />
           Add Contact
         </Button>
       </DialogTrigger>
-      <DialogContent className='sm:max-w-[500px]'>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Contact</DialogTitle>
           <DialogDescription>
@@ -98,15 +122,15 @@ export function AddContactForm({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name='name'
+              name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder='John Doe' {...field} />
+                    <Input placeholder="John Doe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -115,12 +139,12 @@ export function AddContactForm({
 
             <FormField
               control={form.control}
-              name='title'
+              name="title"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder='CEO, CTO, etc.' {...field} />
+                    <Input placeholder="CEO, CTO, etc." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,16 +153,12 @@ export function AddContactForm({
 
             <FormField
               control={form.control}
-              name='email'
+              name="email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input
-                      type='email'
-                      placeholder='john@example.com'
-                      {...field}
-                    />
+                    <Input type="email" placeholder="john@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -147,12 +167,12 @@ export function AddContactForm({
 
             <FormField
               control={form.control}
-              name='phone'
+              name="phone"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Phone</FormLabel>
                   <FormControl>
-                    <Input placeholder='+1 (555) 123-4567' {...field} />
+                    <Input placeholder="+1 (555) 123-4567" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -161,32 +181,70 @@ export function AddContactForm({
 
             <FormField
               control={form.control}
-              name='avatar_url'
+              name="avatar_url"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Avatar URL</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder='https://example.com/avatar.jpg'
-                      {...field}
-                    />
+                    <Input placeholder="https://example.com/avatar.jpg" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className='flex justify-end gap-2 pt-4'>
+            <FormField
+              control={form.control}
+              name="panelist_type_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Panelist Type</FormLabel>
+                  <Select
+                    onValueChange={(value) =>
+                      field.onChange(value === "none" ? null : value)
+                    }
+                    value={field.value ?? "none"}
+                    disabled={loadingTypes}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        {loadingTypes ? (
+                          <span className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Loading...
+                          </span>
+                        ) : (
+                          <SelectValue placeholder="Select a panelist type" />
+                        )}
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <span className="text-muted-foreground">None</span>
+                      </SelectItem>
+                      {panelistTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
               <Button
-                type='button'
-                variant='outline'
+                type="button"
+                variant="outline"
                 onClick={() => setOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type='submit' disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && (
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Add Contact
               </Button>

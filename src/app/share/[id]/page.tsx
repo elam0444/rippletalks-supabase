@@ -77,6 +77,11 @@ export default async function SharePage({
                             logo_url,
                             website,
                             description
+                        ),
+                        panelist_type_id,
+                        panelist_types (
+                            id,
+                            name
                         )
                     `,
           )
@@ -84,6 +89,10 @@ export default async function SharePage({
           .single();
 
         if (contact) {
+          const panelistType = Array.isArray(contact.panelist_types)
+            ? contact.panelist_types[0]
+            : contact.panelist_types;
+
           sharedContact = {
             id: contact.id,
             name: contact.name,
@@ -91,6 +100,7 @@ export default async function SharePage({
             title: contact.title,
             phone: contact.phone,
             avatar_url: contact.avatar_url,
+            panelist_type: panelistType?.name,
           };
 
           const { data, error } = await adminClient
@@ -102,10 +112,12 @@ export default async function SharePage({
           if (error) {
             console.error("Error fetching contact dates:", error);
           } else if (data) {
-            contactDates = (data || []).map((d: { available_date: string; is_selected: boolean }) => ({
-              available_date: d.available_date,
-              is_selected: d.is_selected ?? false,
-            }));
+            contactDates = (data || []).map(
+              (d: { available_date: string; is_selected: boolean }) => ({
+                available_date: d.available_date,
+                is_selected: d.is_selected ?? false,
+              }),
+            );
           }
 
           // Supabase returns the relation as a single object, not an array
@@ -127,7 +139,15 @@ export default async function SharePage({
   }
 
   // Fetch target companies — use admin client so unauthenticated share link users can also see them
-  let companies: { id: string; name: string; description?: string; why?: string; note?: string; selected?: boolean; relationship_category?: string }[] = [];
+  let companies: {
+    id: string;
+    name: string;
+    description?: string;
+    why?: string;
+    note?: string;
+    selected?: boolean;
+    relationship_category?: string;
+  }[] = [];
 
   {
     const { data, error } = await adminClient

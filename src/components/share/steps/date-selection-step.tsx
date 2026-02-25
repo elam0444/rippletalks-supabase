@@ -29,7 +29,7 @@ export function DateSelectionStep({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
     >
-      <h2 className="text-2xl font-bold text-gray-900">
+      <h2 className="text-2xl font-semibold text-gray-900">
         Step 1: Select Dates to Attend RippleTalk
       </h2>
       <p className="text-gray-600">
@@ -52,7 +52,7 @@ export function DateSelectionStep({
         </div>
       )}
 
-      <div className="flex justify-between items-center mt-6">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center">
         <StepIndicator step={1} label="Select Dates" />
         <Button onClick={onNext} disabled={!hasSelectedDates}>
           Next: Select Opportunities →

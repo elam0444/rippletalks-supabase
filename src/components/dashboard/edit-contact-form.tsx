@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -13,7 +13,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import {
   Dialog,
   DialogContent,
@@ -21,10 +21,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { updateContact } from "@/lib/actions/contact"
-import { toast } from "sonner"
-import { Loader2, Pencil } from "lucide-react"
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { updateContact } from "@/lib/actions/contact";
+import { getPanelistTypes } from "@/lib/actions/panelist-types";
+import { toast } from "sonner";
+import { Loader2, Pencil } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(255),
@@ -32,20 +40,27 @@ const formSchema = z.object({
   title: z.string().max(255).optional(),
   phone: z.string().max(50).optional(),
   avatar_url: z.string().url("Invalid URL").optional().or(z.literal("")),
-})
+  panelist_type_id: z.string().nullable().optional(),
+});
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof formSchema>;
+
+interface PanelistType {
+  id: string;
+  name: string;
+}
 
 interface EditContactFormProps {
-  contactId: string
-  companyId: string
+  contactId: string;
+  companyId: string;
   initialData: {
-    name: string
-    email?: string | null
-    title?: string | null
-    phone?: string | null
-    avatar_url?: string | null
-  }
+    name: string;
+    email?: string | null;
+    title?: string | null;
+    phone?: string | null;
+    avatar_url?: string | null;
+    panelist_type_id?: string | null;
+  };
 }
 
 export function EditContactForm({
@@ -53,8 +68,10 @@ export function EditContactForm({
   companyId,
   initialData,
 }: EditContactFormProps) {
-  const [open, setOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [panelistTypes, setPanelistTypes] = useState<PanelistType[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -64,11 +81,32 @@ export function EditContactForm({
       title: initialData.title || "",
       phone: initialData.phone || "",
       avatar_url: initialData.avatar_url || "",
+      panelist_type_id: initialData.panelist_type_id || null,
     },
-  })
+  });
+
+  // Fetch panelist types when the dialog opens
+  useEffect(() => {
+    if (!open) return;
+    form.reset({
+      name: initialData.name,
+      email: initialData.email || "",
+      title: initialData.title || "",
+      phone: initialData.phone || "",
+      avatar_url: initialData.avatar_url || "",
+      panelist_type_id: initialData.panelist_type_id ?? null,
+    });
+
+    setLoadingTypes(true);
+
+    getPanelistTypes()
+      .then((data) => setPanelistTypes(data))
+      .catch(() => toast.error("Failed to load panelist types"))
+      .finally(() => setLoadingTypes(false));
+  }, [open]);
 
   async function onSubmit(values: FormValues) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     const result = await updateContact(contactId, companyId, {
       name: values.name,
@@ -76,22 +114,27 @@ export function EditContactForm({
       title: values.title || null,
       phone: values.phone || null,
       avatar_url: values.avatar_url || null,
-    })
+      panelist_type_id: values.panelist_type_id || null,
+    });
 
-    setIsSubmitting(false)
+    setIsSubmitting(false);
 
     if (result.success) {
-      toast.success("Contact updated")
-      setOpen(false)
+      toast.success("Contact updated");
+      setOpen(false);
     } else {
-      toast.error(result.error || "Something went wrong")
+      toast.error(result.error || "Something went wrong");
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+        >
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
@@ -139,7 +182,11 @@ export function EditContactForm({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="john@example.com" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="john@example.com"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,8 +214,52 @@ export function EditContactForm({
                 <FormItem>
                   <FormLabel>Avatar URL</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com/avatar.jpg" {...field} />
+                    <Input
+                      placeholder="https://example.com/avatar.jpg"
+                      {...field}
+                    />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="panelist_type_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Panelist Type</FormLabel>
+                  <Select
+                    onValueChange={(value) =>
+                      field.onChange(value === "none" ? null : value)
+                    }
+                    value={field.value ?? "none"}
+                    disabled={loadingTypes}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        {loadingTypes ? (
+                          <span className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Loading...
+                          </span>
+                        ) : (
+                          <SelectValue placeholder="Select a panelist type" />
+                        )}
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <span className="text-muted-foreground">None</span>
+                      </SelectItem>
+                      {panelistTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -193,5 +284,5 @@ export function EditContactForm({
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

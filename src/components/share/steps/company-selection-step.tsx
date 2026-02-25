@@ -77,7 +77,7 @@ export function CompanySelectionStep({
   const tableColumnVisibility = useMemo(
     (): Record<string, boolean> =>
       isMobile ? { description: false, category: false } : {},
-    [isMobile]
+    [isMobile],
   );
 
   const toolbarButtons = (
@@ -86,7 +86,9 @@ export function CompanySelectionStep({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onViewModeChange(viewMode === "tiles" ? "table" : "tiles")}
+          onClick={() =>
+            onViewModeChange(viewMode === "tiles" ? "table" : "tiles")
+          }
         >
           {viewMode === "tiles" ? "Table View" : "Tile View"}
         </Button>
@@ -116,8 +118,8 @@ export function CompanySelectionStep({
     >
       <Card className="space-y-0">
         <CardHeader>
-          <CardTitle className="text-2xl md:text-3xl text-gray-900">
-            Key Stakeholder Opportunities
+          <CardTitle className="text-2xl md:text-3xl text-semibold text-gray-900">
+            Step 2: Key Stakeholder Opportunities
           </CardTitle>
           <CardDescription className="text-base text-gray-600">
             Uncheck companies you&apos;d rather pass on, or add new companies
@@ -148,32 +150,39 @@ export function CompanySelectionStep({
           {viewMode === "tiles" && (
             <>
               <div className="flex flex-wrap gap-2">{toolbarButtons}</div>
-              {Object.entries(groupedCompanies).map(([category, categoryCompanies]) => (
-                <div key={category || "__no_category__"} className="space-y-4 mt-4">
-                  {category ? (
-                    <h2 className="text-xl font-bold text-gray-700">{category}</h2>
-                  ) : (
-                    <div className="h-7" aria-hidden />
-                  )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {categoryCompanies.map((company) => (
-                      <CompanyTile
-                        key={company.id}
-                        company={company}
-                        isSelected={selected[company.id]}
-                        onToggle={() => onToggleCompany(company.id)}
-                        onDelete={() => onDelete(company)}
-                        onEditWhy={() => onEditWhy(company)}
-                      />
-                    ))}
+              {Object.entries(groupedCompanies).map(
+                ([category, categoryCompanies]) => (
+                  <div
+                    key={category || "__no_category__"}
+                    className="space-y-4 mt-4"
+                  >
+                    {category ? (
+                      <h2 className="text-xl font-bold text-gray-700">
+                        {category}
+                      </h2>
+                    ) : (
+                      <div className="h-7" aria-hidden />
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {categoryCompanies.map((company) => (
+                        <CompanyTile
+                          key={company.id}
+                          company={company}
+                          isSelected={selected[company.id]}
+                          onToggle={() => onToggleCompany(company.id)}
+                          onDelete={() => onDelete(company)}
+                          onEditWhy={() => onEditWhy(company)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </>
           )}
 
           {/* Footer Navigation */}
-          <div className="mt-8 pt-6 border-t border-gray-200 flex flex-wrap justify-between items-center gap-4">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center">
             <Button
               variant="outline"
               onClick={onBack}
@@ -182,7 +191,10 @@ export function CompanySelectionStep({
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to dates
             </Button>
-            <Button onClick={onNext} className="bg-green-600 hover:bg-green-700">
+            <Button
+              onClick={onNext}
+              className="bg-green-600 hover:bg-green-700"
+            >
               <CheckCircle2 className="h-4 w-4 mr-2" />
               Done!
             </Button>
