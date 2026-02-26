@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     const targetedIds = existingTargets?.map((t) => t.target_company_id) || [];
     const excludeIds = [...targetedIds, clientCompanyId];
 
-    console.log("[API /share/companies] Excluding IDs:", excludeIds);
+    // console.log("[API /share/companies] Excluding IDs:", excludeIds);
 
     // First, check total companies count
     const { count: totalCount } = await adminClient

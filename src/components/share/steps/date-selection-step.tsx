@@ -10,6 +10,7 @@ interface DateSelectionStepProps {
   dates: ContactDate[];
   onToggleDate: (date: string) => void;
   onNext: () => void;
+  panelistType: string | null;
 }
 
 /**
@@ -19,6 +20,7 @@ export function DateSelectionStep({
   dates,
   onToggleDate,
   onNext,
+  panelistType,
 }: DateSelectionStepProps) {
   const hasSelectedDates = dates.some((d) => d.is_selected);
 
@@ -30,7 +32,7 @@ export function DateSelectionStep({
       exit={{ opacity: 0, y: -20 }}
     >
       <h2 className="text-2xl font-semibold text-gray-900">
-        Step 1: Select Dates to Attend RippleTalk
+        Step 1: Select the date that works best to join us as our {panelistType || 'guest'}
       </h2>
       <p className="text-gray-600">
         Choose the dates you are interested in attending. You can select

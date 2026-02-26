@@ -31,6 +31,7 @@ interface CompanySelectionStepProps {
   onAddClick: () => void;
   onBack: () => void;
   onNext: () => void;
+  companyName?: string | null;
 }
 
 /**
@@ -51,6 +52,7 @@ export function CompanySelectionStep({
   onAddClick,
   onBack,
   onNext,
+  companyName,
 }: CompanySelectionStepProps) {
   const allSelected = companies.every((c) => selected[c.id]);
 
@@ -119,11 +121,11 @@ export function CompanySelectionStep({
       <Card className="space-y-0">
         <CardHeader>
           <CardTitle className="text-2xl md:text-3xl text-semibold text-gray-900">
-            Step 2: Key Stakeholder Opportunities
+            Step 2:
           </CardTitle>
           <CardDescription className="text-base text-gray-600">
-            Uncheck companies you&apos;d rather pass on, or add new companies
-            you want to connect with.
+            CEOs Guests of Ripple Talks for {companyName || "you company"}. Feel free to add or
+            remove any new company to the list.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

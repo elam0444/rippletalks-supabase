@@ -21,14 +21,17 @@ export function ContactWelcomeCard({
         </h2>
       </div>
       <p className="text-base text-gray-600">
-        We’re excited to host you as our <strong>{contact.panelist_type || "Guest"}</strong> on
-        our upcoming fireside chat. In order to make our fireside chats as
-        productive and strategic to our &nbsp;{contact.panelist_type} we are
-        reserving 10 spots to invite CEOs of companies that could prospectively
-        be customers of &nbsp;
-        <strong>{company?.name?.replace(/\.$/, "") || "your company"}</strong>. Feel free to edit or add any company
-        to the list.
+        We’re excited to host you as our{" "}
+        <strong>{contact.panelist_type || "Guest"}</strong> on our upcoming
+        fireside chat.
       </p>
+      <p>
+        In order to make our fireside chats as productive and strategic to our{" "}
+        {contact.panelist_type} we are reserving 10 spots to invite CEOs of
+        companies that could prospectively be customers of{" "}
+        <strong>{company?.name?.replace(/\.$/, "") || "your company"}</strong>.
+      </p>
+      <p>Feel free to edit or add any company to the list.</p>
     </div>
   );
 }
