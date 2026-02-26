@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Building2 } from "lucide-react";
 import { getLogoDevUrl } from "@/lib/utils/logo-utils";
 
@@ -27,7 +26,8 @@ export function CompanyLogoImage({
 
   if (src) {
     return (
-      <Image
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
         src={src}
         alt={name}
         width={size}

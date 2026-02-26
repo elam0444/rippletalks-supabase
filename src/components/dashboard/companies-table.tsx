@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
-import Image from "next/image";
 import { Building2, Globe, ChevronRight } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +35,8 @@ function CompanyLogo({
 
   if (src) {
     return (
-      <Image
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
         src={src}
         alt={name}
         width={32}
