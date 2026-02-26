@@ -80,6 +80,17 @@ export function CompanyForm({
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  function getDefaultValues() {
+    return {
+      name: initialData?.name || "",
+      legal_name: initialData?.legal_name || "",
+      website: initialData?.website || "",
+      logo_url: initialData?.logo_url || "",
+      description: initialData?.description || "",
+      industry_id: initialData?.industry_id || "",
+    };
+  }
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -114,15 +125,22 @@ export function CompanyForm({
     if (result.success) {
       toast.success(mode === "create" ? "Company created" : "Company updated");
       setOpen(false);
-      form.reset();
+      if (mode === "create") form.reset();
       onSuccess?.();
     } else {
       toast.error(result.error || "Something went wrong");
     }
   }
 
+  function handleOpenChange(newOpen: boolean) {
+    if (newOpen) {
+      form.reset(getDefaultValues());
+    }
+    setOpen(newOpen);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button>{mode === "create" ? "Add Company" : "Edit"}</Button>
