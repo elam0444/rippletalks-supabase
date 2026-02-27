@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Building2 } from "lucide-react";
 import { getLogoDevUrl } from "@/lib/utils/logo-utils";
+import Image from "next/image";
 
 interface CompanyLogoImageProps {
   name: string;
@@ -22,12 +23,11 @@ export function CompanyLogoImage({
   fallbackClassName = "rounded-lg",
 }: CompanyLogoImageProps) {
   const [error, setError] = useState(false);
-  const src = !error ? (logoUrl || getLogoDevUrl(website)) : null;
+  const src = !error ? logoUrl || getLogoDevUrl(website) : null;
 
   if (src) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={src}
         alt={name}
         width={size}
@@ -44,7 +44,7 @@ export function CompanyLogoImage({
       style={{ width: size, height: size }}
     >
       <Building2
-        className="text-muted-foreground"
+        className='text-muted-foreground'
         style={{ width: size / 2, height: size / 2 }}
       />
     </div>

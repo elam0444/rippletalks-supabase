@@ -16,6 +16,7 @@ import { EditTargetCompanyForm } from "@/components/dashboard/edit-target-compan
 import { RemoveTargetCompanyButton } from "@/components/dashboard/remove-target-company-button";
 import { WhyNoteDialog } from "@/components/share/company/why-note-dialog";
 import { updateTargetCompany } from "@/lib/actions/target-company";
+import Image from "next/image";
 import { toast } from "sonner";
 import type { Company } from "@/types/share";
 
@@ -29,25 +30,24 @@ function TargetCompanyLogo({
   website?: string | null;
 }) {
   const [error, setError] = useState(false);
-  const src = !error ? (logoUrl || getLogoDevUrl(website)) : null;
+  const src = !error ? logoUrl || getLogoDevUrl(website) : null;
 
   if (src) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={src}
         alt={name}
         width={32}
         height={32}
-        className="h-8 w-8 rounded object-cover"
+        className='h-8 w-8 rounded object-cover'
         onError={() => setError(true)}
       />
     );
   }
 
   return (
-    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-      <Building2 className="h-4 w-4 text-muted-foreground" />
+    <div className='flex h-8 w-8 items-center justify-center rounded bg-muted'>
+      <Building2 className='h-4 w-4 text-muted-foreground' />
     </div>
   );
 }
