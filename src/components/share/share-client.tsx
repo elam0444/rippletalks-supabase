@@ -283,6 +283,7 @@ export function ShareClient({
             dates={dates}
             onToggleDate={toggleDate}
             onNext={() => setStep(2)}
+            panelistType={sharedContact?.panelist_type || null}
           />
         </>
       )}
@@ -305,6 +306,7 @@ export function ShareClient({
             onAddClick={() => setAddCompanyOpen(true)}
             onBack={() => setStep(1)}
             onNext={() => setStep(3)}
+            companyName={sharedCompany?.name || null}
           />
         )}
 

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Building2 } from "lucide-react";
-import { getLogoDevUrl } from "@/lib/utils/logo-utils";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -148,11 +147,19 @@ export function TargetCompaniesTable({
                 <TableRow key={target.id}>
                   <TableCell>
                     <div className='flex items-center gap-3'>
-                      <TargetCompanyLogo
-                        name={targetCompany?.name || "Unknown"}
-                        logoUrl={targetCompany?.logo_url}
-                        website={targetCompany?.website}
-                      />
+                      {targetCompany?.logo_url ? (
+                        <Image
+                          src={targetCompany.logo_url}
+                          alt={targetCompany.name}
+                          width={32}
+                          height={32}
+                          className='h-8 w-8 rounded object-cover'
+                        />
+                      ) : (
+                        <div className='flex h-8 w-8 items-center justify-center rounded bg-muted'>
+                          <Building2 className='h-4 w-4 text-muted-foreground' />
+                        </div>
+                      )}
                       <span className='font-medium'>
                         {targetCompany?.name || "Unknown"}
                       </span>
