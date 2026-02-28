@@ -18,6 +18,7 @@ import { updateTargetCompany } from "@/lib/actions/target-company";
 import Image from "next/image";
 import { toast } from "sonner";
 import type { Company } from "@/types/share";
+import { getLogoDevUrl } from "@/lib/utils/logo-utils";
 
 function TargetCompanyLogo({
   name,

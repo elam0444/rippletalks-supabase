@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import { Building2, Globe, ChevronRight } from "lucide-react";
@@ -7,6 +8,7 @@ import { DataTable } from "@/components/ui/data-table";
 import Image from "next/image";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { truncateText } from "@/lib/utils/text-utils";
+import { getLogoDevUrl } from "@/lib/utils/logo-utils";
 
 type Company = {
   id: any;
