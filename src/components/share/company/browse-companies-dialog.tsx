@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Search, Loader2, Building2, Plus } from "lucide-react";
+import { getLogoDevUrl } from "@/lib/utils/logo-utils";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +21,30 @@ interface BrowseCompaniesDialogProps {
   token?: string;
   onAddCompany: (companyId: string) => Promise<void>;
   trigger?: React.ReactNode;
+}
+
+function BrowseCompanyLogo({ name, logoUrl, website }: { name: string; logoUrl?: string | null; website?: string | null }) {
+  const [error, setError] = useState(false);
+  const src = !error ? logoUrl || getLogoDevUrl(website) : null;
+
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt={name}
+        width={32}
+        height={32}
+        className="h-8 w-8 rounded object-cover shrink-0"
+        onError={() => setError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-gray-100">
+      <Building2 className="h-4 w-4 text-gray-400" />
+    </div>
+  );
 }
 
 /**
@@ -130,9 +156,7 @@ export function BrowseCompaniesDialog({
                     className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-gray-100">
-                        <Building2 className="h-4 w-4 text-gray-400" />
-                      </div>
+                      <BrowseCompanyLogo name={company.name} logoUrl={company.logo_url} website={company.website} />
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 truncate">
                           {company.name}

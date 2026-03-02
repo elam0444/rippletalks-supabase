@@ -1,13 +1,39 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
+import Image from "next/image";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Trash2 } from "lucide-react";
+import { Building2, Trash2 } from "lucide-react";
+import { getLogoDevUrl } from "@/lib/utils/logo-utils";
 import { Button } from "@/components/ui/button";
 import { CompanyCheckbox } from "./company-checkbox";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { truncateText } from "@/lib/utils/text-utils";
 import type { Company } from "@/types/share";
+
+function CompanyLogo({ name, logoUrl, website }: { name: string; logoUrl?: string | null; website?: string | null }) {
+  const [error, setError] = useState(false);
+  const src = !error ? logoUrl || getLogoDevUrl(website) : null;
+
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt={name}
+        width={24}
+        height={24}
+        className="h-6 w-6 rounded object-cover shrink-0"
+        onError={() => setError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-6 w-6 items-center justify-center rounded bg-muted shrink-0">
+      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+    </div>
+  );
+}
 
 interface UseCompanyColumnsOptions {
   selected: Record<string, boolean>;
@@ -57,9 +83,12 @@ export function useCompanyColumns({
         accessorKey: "name",
         header: "Company",
         cell: ({ row }) => (
-          <span className="font-medium text-foreground wrap-break-word min-w-0">
-            {row.original.name}
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <CompanyLogo name={row.original.name} logoUrl={row.original.logo_url} website={row.original.website} />
+            <span className="font-medium text-foreground wrap-break-word min-w-0">
+              {row.original.name}
+            </span>
+          </div>
         ),
         meta: {
           cellClassName:

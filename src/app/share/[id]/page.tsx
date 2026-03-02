@@ -147,6 +147,8 @@ export default async function SharePage({
     note?: string;
     selected?: boolean;
     relationship_category?: string;
+    logo_url?: string | null;
+    website?: string | null;
   }[] = [];
 
   {
@@ -165,7 +167,9 @@ export default async function SharePage({
                 companies!target_companies_target_company_id_fkey (
                   id,
                   name,
-                  description
+                  description,
+                  logo_url,
+                  website
                 )
             `,
       )
@@ -190,6 +194,8 @@ export default async function SharePage({
           note: item.note ?? undefined,
           selected: item.selected ?? undefined,
           relationship_category: cat?.name ?? "Uncategorized",
+          logo_url: comp?.logo_url ?? null,
+          website: comp?.website ?? null,
         };
       });
     }

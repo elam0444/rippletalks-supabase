@@ -10,6 +10,8 @@ export interface Company {
   note?: string;
   selected?: boolean;
   relationship_category?: string;
+  logo_url?: string | null;
+  website?: string | null;
 }
 
 export interface Contact {
@@ -31,6 +33,8 @@ export interface BrowseCompany {
   id: string;
   name: string;
   description?: string;
+  logo_url?: string | null;
+  website?: string | null;
 }
 
 export interface Industry {
