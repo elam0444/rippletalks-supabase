@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     // Fetch available companies
     let query = adminClient
       .from("companies")
-      .select("id, name, description")
+      .select("id, name, description, logo_url, website")
       .is("deleted_at", null)
       .order("name");
 
