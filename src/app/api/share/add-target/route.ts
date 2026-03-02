@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     // Fetch company details to return
     const { data: company } = await adminClient
       .from("companies")
-      .select("id, name, description")
+      .select("id, name, description, logo_url, website")
       .eq("id", targetCompanyId)
       .single();
 

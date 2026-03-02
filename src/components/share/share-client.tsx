@@ -183,6 +183,8 @@ export function ShareClient({
           id: data.company.id,
           name: data.company.name,
           description: data.company.description,
+          logo_url: data.company.logo_url ?? null,
+          website: data.company.website ?? null,
           selected: true,
         };
         setCompaniesList((prev) => [...prev, newCompany]);
