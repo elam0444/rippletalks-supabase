@@ -44,18 +44,36 @@ export function ShareClient({
     async (date: string) => {
       const current = dates.find((d) => d.available_date === date);
       if (!current) return;
+      // Single-select: selecting a date deselects all others
       const newValue = !current.is_selected;
 
-      // Optimistically update UI
+      // Optimistically update UI — deselect all, then select the toggled one
+      const prevDates = dates;
       setDates((prev) =>
-        prev.map((d) =>
-          d.available_date === date ? { ...d, is_selected: newValue } : d,
-        ),
+        prev.map((d) => ({
+          ...d,
+          is_selected: d.available_date === date ? newValue : false,
+        })),
       );
 
       if (token) {
         try {
-          const res = await fetch("/api/share/update-date", {
+          // Deselect previously selected dates (other than the toggled one)
+          const deselects = prevDates
+            .filter((d) => d.available_date !== date && d.is_selected)
+            .map((d) =>
+              fetch("/api/share/update-date", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  token,
+                  availableDate: d.available_date,
+                  isSelected: false,
+                }),
+              }),
+            );
+
+          const toggle = fetch("/api/share/update-date", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -64,26 +82,20 @@ export function ShareClient({
               isSelected: newValue,
             }),
           });
-          if (!res.ok) {
-            const data = await res.json();
-            console.error("API error:", data.error);
-            // Revert on failure
-            setDates((prev) =>
-              prev.map((d) =>
-                d.available_date === date
-                  ? { ...d, is_selected: !newValue }
-                  : d,
-              ),
-            );
+
+          const results = await Promise.all([...deselects, toggle]);
+          for (const res of results) {
+            if (!res.ok) {
+              const data = await res.json();
+              console.error("API error:", data.error);
+              // Revert on any failure
+              setDates(prevDates);
+              return;
+            }
           }
         } catch (err) {
           console.error("Unexpected API error:", err);
-          // Revert on failure
-          setDates((prev) =>
-            prev.map((d) =>
-              d.available_date === date ? { ...d, is_selected: !newValue } : d,
-            ),
-          );
+          setDates(prevDates);
         }
       }
     },
@@ -270,7 +282,7 @@ export function ShareClient({
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className='max-w-6xl mx-auto p-6 space-y-6'>
       {/* --- Step 1: Date Selection --- */}
       {step === 1 && (
         <>
@@ -291,7 +303,7 @@ export function ShareClient({
       )}
 
       {/* --- Step 2: Company Selection --- */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode='wait'>
         {step === 2 && (
           <CompanySelectionStep
             companies={companiesList}
@@ -304,7 +316,7 @@ export function ShareClient({
             onEditWhy={setActiveCompany}
             onDelete={setCompanyToDelete}
             onViewModeChange={setViewMode}
-            onBrowseClick={() => setBrowseOpen(true)}
+            // onBrowseClick={() => setBrowseOpen(true)}
             onAddClick={() => setAddCompanyOpen(true)}
             onBack={() => setStep(1)}
             onNext={() => setStep(3)}
@@ -315,11 +327,8 @@ export function ShareClient({
         {/* --- Step 3: Confirmation --- */}
         {step === 3 && (
           <ConfirmationStep
-            selectedDatesCount={dates.filter((d) => d.is_selected).length}
-            selectedCompaniesCount={
-              Object.values(selected).filter(Boolean).length
-            }
             onBack={() => setStep(2)}
+            selectedDate={dates.find((d) => d.is_selected)?.available_date ?? null}
           />
         )}
       </AnimatePresence>

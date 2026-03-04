@@ -66,6 +66,8 @@ interface DataTableProps<TData, TValue> {
   ) => void;
   /** Extra content (e.g. filter buttons) to show in the toolbar next to search */
   toolbarExtra?: React.ReactNode;
+  /** Extra content to show on the right side of the toolbar */
+  toolbarRight?: React.ReactNode;
   /** Hide the column visibility "View" button */
   hideViewButton?: boolean;
 }
@@ -81,6 +83,7 @@ export function DataTable<TData, TValue>({
   columnVisibility: controlledVisibility,
   onColumnVisibilityChange,
   toolbarExtra,
+  toolbarRight,
   hideViewButton = false,
 }: DataTableProps<TData, TValue>) {
   const id = React.useId();
@@ -174,49 +177,54 @@ export function DataTable<TData, TValue>({
             </div>
           )}
           {toolbarExtra}
-          {!hideViewButton && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant='outline'>
-                  <Columns3Icon
-                    className='-ms-1 opacity-60'
-                    size={16}
-                    aria-hidden='true'
-                  />
-                  View
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align='start' className='w-48'>
-                <div className='space-y-1'>
-                  <div className='text-sm font-medium mb-2'>Toggle columns</div>
-                  {table
-                    .getAllColumns()
-                    .filter((column) => column.getCanHide())
-                    .map((column) => {
-                      return (
-                        <label
-                          key={column.id}
-                          className='flex items-center gap-2 py-1.5 px-2 cursor-pointer hover:bg-accent rounded-sm'
-                        >
-                          <input
-                            type='checkbox'
-                            className='h-4 w-4 rounded border-input'
-                            checked={column.getIsVisible()}
-                            onChange={(e) =>
-                              column.toggleVisibility(e.target.checked)
-                            }
-                          />
-                          <span className='text-sm capitalize'>
-                            {column.id}
-                          </span>
-                        </label>
-                      );
-                    })}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
         </div>
+        {(toolbarRight || !hideViewButton) && (
+          <div className='flex items-center gap-3'>
+            {toolbarRight}
+            {!hideViewButton && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant='outline'>
+                    <Columns3Icon
+                      className='-ms-1 opacity-60'
+                      size={16}
+                      aria-hidden='true'
+                    />
+                    View
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align='start' className='w-48'>
+                  <div className='space-y-1'>
+                    <div className='text-sm font-medium mb-2'>Toggle columns</div>
+                    {table
+                      .getAllColumns()
+                      .filter((column) => column.getCanHide())
+                      .map((column) => {
+                        return (
+                          <label
+                            key={column.id}
+                            className='flex items-center gap-2 py-1.5 px-2 cursor-pointer hover:bg-accent rounded-sm'
+                          >
+                            <input
+                              type='checkbox'
+                              className='h-4 w-4 rounded border-input'
+                              checked={column.getIsVisible()}
+                              onChange={(e) =>
+                                column.toggleVisibility(e.target.checked)
+                              }
+                            />
+                            <span className='text-sm capitalize'>
+                              {column.id}
+                            </span>
+                          </label>
+                        );
+                      })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Table */}

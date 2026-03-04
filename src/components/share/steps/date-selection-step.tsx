@@ -34,11 +34,6 @@ export function DateSelectionStep({
       <h2 className="text-2xl font-semibold text-gray-900">
         Step 1: Select the date that works best to join us as our {panelistType || 'guest'}
       </h2>
-      <p className="text-gray-600">
-        Choose the dates you are interested in attending. You can select
-        multiple.
-      </p>
-
       {dates.length === 0 ? (
         <p className="text-gray-500">No available dates for this contact.</p>
       ) : (

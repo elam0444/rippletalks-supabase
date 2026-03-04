@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Loader2, Plus } from "lucide-react";
 import {
   Dialog,
@@ -9,16 +9,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Company, Industry } from "@/types/share";
+import type { Company } from "@/types/share";
 
 interface AddCompanyDialogProps {
   open: boolean;
@@ -39,37 +32,16 @@ export function AddCompanyDialog({
   trigger,
 }: AddCompanyDialogProps) {
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [industryId, setIndustryId] = useState<string>("");
-  const [industries, setIndustries] = useState<Industry[]>([]);
-  const [industriesLoading, setIndustriesLoading] = useState(false);
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchIndustries = async () => {
-    if (!token) return;
-    setIndustriesLoading(true);
-    try {
-      const res = await fetch(
-        `/api/share/industries?token=${encodeURIComponent(token)}`
-      );
-      const data = await res.json();
-      if (res.ok) setIndustries(data.industries || []);
-    } catch (err) {
-      console.error("Error fetching industries:", err);
-    } finally {
-      setIndustriesLoading(false);
-    }
-  };
 
   const handleOpenChange = (isOpen: boolean) => {
     onOpenChange(isOpen);
     if (isOpen) {
       setError(null);
       setName("");
-      setDescription("");
-      setIndustryId("");
-      fetchIndustries();
+      setWebsiteUrl("");
     }
   };
 
@@ -84,9 +56,7 @@ export function AddCompanyDialog({
         body: JSON.stringify({
           token,
           name: name.trim(),
-          description: description.trim() || undefined,
-          industry_id:
-            industryId && industryId !== "__none__" ? industryId : undefined,
+          website_url: websiteUrl.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -94,13 +64,12 @@ export function AddCompanyDialog({
         const newCompany: Company = {
           id: data.company.id,
           name: data.company.name,
-          description: data.company.description,
+          website_url: data.company.website_url,
           selected: true,
         };
         onAddCompany(newCompany);
         setName("");
-        setDescription("");
-        setIndustryId("");
+        setWebsiteUrl("");
         onOpenChange(false);
       } else {
         setError(data.error || "Failed to add company");
@@ -121,7 +90,7 @@ export function AddCompanyDialog({
           <DialogTitle>Add a company</DialogTitle>
           <p className="text-sm text-gray-500 font-normal">
             Add a company that isn&apos;t in our database. Enter the name and
-            optional description.
+            optional website URL.
           </p>
         </DialogHeader>
         <div className="space-y-4 pt-2">
@@ -144,40 +113,15 @@ export function AddCompanyDialog({
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700">
-              Industry (optional)
-            </label>
-            <Select
-              value={industryId || "__none__"}
-              onValueChange={setIndustryId}
-              disabled={adding || industriesLoading}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue
-                  placeholder={
-                    industriesLoading ? "Loading…" : "Select an industry"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">None</SelectItem>
-                {industries.map((industry) => (
-                  <SelectItem key={industry.id} value={industry.id}>
-                    {industry.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Description (optional)
+              Website URL (optional)
             </label>
             <Input
-              placeholder="Brief description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. https://acmecorp.com"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
               className="mt-1"
               disabled={adding}
+              type="url"
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
