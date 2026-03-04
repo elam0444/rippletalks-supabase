@@ -65,6 +65,7 @@ export default async function SharePage({
           .select(
             `
                         id,
+                        first_name,
                         name,
                         email,
                         title,
@@ -95,6 +96,7 @@ export default async function SharePage({
 
           sharedContact = {
             id: contact.id,
+            first_name: contact.first_name,
             name: contact.name,
             email: contact.email,
             title: contact.title,

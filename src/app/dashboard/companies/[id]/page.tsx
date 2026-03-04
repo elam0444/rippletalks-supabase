@@ -321,7 +321,8 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                             contactId={contact.id}
                             companyId={company.id}
                             initialData={{
-                              name: contact.name,
+                              first_name: contact.first_name,
+                              last_name: contact.last_name,
                               email: contact.email,
                               title: contact.title,
                               phone: contact.phone,
