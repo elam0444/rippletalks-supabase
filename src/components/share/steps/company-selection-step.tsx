@@ -2,7 +2,12 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Search, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Plus,
+  LayoutGrid /*, Search*/,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,7 +32,7 @@ interface CompanySelectionStepProps {
   onEditWhy: (company: Company) => void;
   onDelete: (company: Company) => void;
   onViewModeChange: (mode: "tiles" | "table") => void;
-  onBrowseClick: () => void;
+  // onBrowseClick: () => void;
   onAddClick: () => void;
   onBack: () => void;
   onNext: () => void;
@@ -48,7 +53,7 @@ export function CompanySelectionStep({
   onEditWhy,
   onDelete,
   onViewModeChange,
-  onBrowseClick,
+  // onBrowseClick,
   onAddClick,
   onBack,
   onNext,
@@ -84,6 +89,18 @@ export function CompanySelectionStep({
 
   const toolbarButtons = (
     <>
+      {token && (
+        <div className="hidden">
+          {/* <Button variant="outline" size="sm" onClick={onBrowseClick}>
+            <Search className="h-4 w-4 mr-2" />
+            Browse Companies
+          </Button> */}
+          <Button variant="outline" size="sm" onClick={onAddClick}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Company
+          </Button>
+        </div>
+      )}
       {companies.length > 0 && (
         <Button
           variant="outline"
@@ -91,21 +108,10 @@ export function CompanySelectionStep({
           onClick={() =>
             onViewModeChange(viewMode === "tiles" ? "table" : "tiles")
           }
+          title={viewMode === "tiles" ? "Table View" : "Tile View"}
         >
-          {viewMode === "tiles" ? "Table View" : "Tile View"}
+          <LayoutGrid className="h-4 w-4" />
         </Button>
-      )}
-      {token && (
-        <>
-          <Button variant="outline" size="sm" onClick={onBrowseClick}>
-            <Search className="h-4 w-4 mr-2" />
-            Browse Companies
-          </Button>
-          <Button variant="outline" size="sm" onClick={onAddClick}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Company (not in list)
-          </Button>
-        </>
       )}
     </>
   );
@@ -120,12 +126,19 @@ export function CompanySelectionStep({
     >
       <Card className="space-y-0">
         <CardHeader>
-          <CardTitle className="text-2xl md:text-3xl text-semibold text-gray-900">
-            Step 2:
+          <CardTitle className="text-2xl font-semibold text-gray-900">
+            Step 2: Select CEOs
           </CardTitle>
-          <CardDescription className="text-base text-gray-600">
-            CEOs Guests of Ripple Talks for {companyName || "you company"}. Feel free to add or
-            remove any new company to the list.
+          <CardDescription className="text-base text-gray-900 space-y-3">
+            <p>
+              We have thousands of CEOs in our Ripple Talks network and we can
+              invite them to join your fireside chat as VIP guests.{" "}
+            </p>
+            <p>
+              We’ve generated a strategic guest list of 10 CEOs of companies who
+              could be great prospective customers for{" "}
+              {companyName || "you company"}.
+            </p>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -138,12 +151,13 @@ export function CompanySelectionStep({
                 defaultPageSize={10}
                 pageSizeOptions={[5, 10, 25, 50]}
                 columnVisibility={tableColumnVisibility}
-                toolbarExtra={
+                toolbarRight={
                   <div className="flex flex-wrap items-center gap-2">
                     {toolbarButtons}
                   </div>
                 }
                 hideViewButton
+                rowIsActive={(company) => !!selected[company.id]}
               />
             </div>
           )}
@@ -151,7 +165,9 @@ export function CompanySelectionStep({
           {/* Tile View */}
           {viewMode === "tiles" && (
             <>
-              <div className="flex flex-wrap gap-2">{toolbarButtons}</div>
+              <div className="flex flex-wrap gap-2 justify-end">
+                {toolbarButtons}
+              </div>
               {Object.entries(groupedCompanies).map(
                 ([category, categoryCompanies]) => (
                   <div
@@ -184,25 +200,36 @@ export function CompanySelectionStep({
           )}
 
           {/* Footer Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center">
+          {/*<div className='fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center'>
             <Button
-              variant="outline"
+              variant='outline'
               onClick={onBack}
-              className="border-gray-300"
+              className='border-gray-300'
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className='h-4 w-4 mr-2' />
               Back to dates
             </Button>
             <Button
               onClick={onNext}
-              className="bg-green-600 hover:bg-green-700"
+              className='bg-green-600 hover:bg-green-700'
             >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
+              <CheckCircle2 className='h-4 w-4 mr-2' />
               Done!
             </Button>
-          </div>
+          </div>*/}
         </CardContent>
       </Card>
+
+      {/* Done button */}
+      <div className="space-y-6 text-center pt-6">
+        <Button
+          onClick={onNext}
+          className="bg-green-600 hover:bg-green-700 h-14 px-8 text-lg font-semibold cursor-pointer"
+        >
+          <CheckCircle2 className="h-5 w-5 mr-2" />
+          Done!
+        </Button>
+      </div>
     </motion.div>
   );
 }

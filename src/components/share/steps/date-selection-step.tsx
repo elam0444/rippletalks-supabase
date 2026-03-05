@@ -34,11 +34,6 @@ export function DateSelectionStep({
       <h2 className="text-2xl font-semibold text-gray-900">
         Step 1: Select the date that works best to join us as our {panelistType || 'guest'}
       </h2>
-      <p className="text-gray-600">
-        Choose the dates you are interested in attending. You can select
-        multiple.
-      </p>
-
       {dates.length === 0 ? (
         <p className="text-gray-500">No available dates for this contact.</p>
       ) : (
@@ -54,12 +49,12 @@ export function DateSelectionStep({
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center">
+      {/*<div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center">
         <StepIndicator step={1} label="Select Dates" />
         <Button onClick={onNext} disabled={!hasSelectedDates}>
           Next: Select Opportunities →
         </Button>
-      </div>
+      </div>*/}
     </motion.div>
   );
 }

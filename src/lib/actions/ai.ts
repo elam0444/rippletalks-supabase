@@ -10,7 +10,13 @@ type TargetCompany = {
   website?: string;
   description?: string;
   industry?: string;
-  contact?: { email?: string; name?: string; title?: string } | null;
+  contact?: {
+    email?: string;
+    name?: string;
+    first_name?: string;
+    last_name?: string;
+    title?: string;
+  } | null;
   relationship_category?: string;
   why?: string;
 };
@@ -34,8 +40,8 @@ Each company should include:
 - description
 - industry (must use exactly this key name) from the following options: ${availableIndustries.join(", ")}
 - why
-- a contact object with "name" (first and last name only, no title), "title" (job title separately), and "email" fields for a person who could be useful for outreach
-- a relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
+- a contact object with "name" (first and last name only, no title), "title" (job title separately please try to find the CEO), and "email" fields for a person who could be useful for outreach
+- a relationship_category (must use exactly this key name) from the following options: Prospect
 
 Output strictly as a JSON object with a "companies" array. Do NOT return the same company described in the input.
 
@@ -51,6 +57,8 @@ Example output format:
       "why": "This company is important because..."
       "contact": {
         "name": "Jane Smith",
+        "first_name": "Jane",
+        "last_name": "Smith",
         "title": "Head of Partnerships",
         "email": "jane.smith@acmecorp.com"
       },
@@ -65,6 +73,8 @@ Example output format:
       "why": "This company is important because..."
       "contact": {
         "name": "Tom Nguyen",
+        "first_name": "Tom",
+        "last_name": "Nguyen",
         "title": "General Partner",
         "email": "tom@brightventures.io"
       },
@@ -211,6 +221,8 @@ export async function saveTargetCompanies(
           .update({
             company_id: companyId,
             name: c.contact.name || null,
+            first_name: c.contact?.first_name || null,
+            last_name: c.contact?.last_name || null,
             title: c.contact.title || null,
             added_by_profile_id: addedByProfileId,
           })
@@ -227,6 +239,8 @@ export async function saveTargetCompanies(
             company_id: companyId,
             email: c.contact.email,
             name: c.contact.name || null,
+            first_name: c.contact?.first_name || null,
+            last_name: c.contact?.last_name || null,
             title: c.contact.title || null,
             added_by_profile_id: addedByProfileId,
           });

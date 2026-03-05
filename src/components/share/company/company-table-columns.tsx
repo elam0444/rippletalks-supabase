@@ -11,7 +11,15 @@ import { CategoryBadge } from "@/components/ui/category-badge";
 import { truncateText } from "@/lib/utils/text-utils";
 import type { Company } from "@/types/share";
 
-function CompanyLogo({ name, logoUrl, website }: { name: string; logoUrl?: string | null; website?: string | null }) {
+function CompanyLogo({
+  name,
+  logoUrl,
+  website,
+}: {
+  name: string;
+  logoUrl?: string | null;
+  website?: string | null;
+}) {
   const [error, setError] = useState(false);
   const src = !error ? logoUrl || getLogoDevUrl(website) : null;
 
@@ -60,12 +68,14 @@ export function useCompanyColumns({
       {
         id: "select",
         header: () => (
-          <CompanyCheckbox
+          <>
+            {/*<CompanyCheckbox
             checked={allSelected}
             onToggle={onToggleAll}
             ariaLabel={allSelected ? "Deselect all" : "Select all"}
             variant="header"
-          />
+          />*/}
+          </>
         ),
         cell: ({ row }) => (
           <div className="flex justify-center">
@@ -83,8 +93,15 @@ export function useCompanyColumns({
         accessorKey: "name",
         header: "Company",
         cell: ({ row }) => (
-          <div className="flex items-center gap-2 min-w-0">
-            <CompanyLogo name={row.original.name} logoUrl={row.original.logo_url} website={row.original.website} />
+          <div
+            className="flex items-center gap-2 min-w-0 cursor-pointer"
+            onClick={() => onEditWhy(row.original)}
+          >
+            <CompanyLogo
+              name={row.original.name}
+              logoUrl={row.original.logo_url}
+              website={row.original.website}
+            />
             <span className="font-medium text-foreground wrap-break-word min-w-0">
               {row.original.name}
             </span>
@@ -97,6 +114,17 @@ export function useCompanyColumns({
         enableSorting: true,
       },
       {
+        id: "tile",
+        accessorKey: "title",
+        header: "Title",
+        cell: "CEO",
+        meta: {
+          cellClassName:
+            "whitespace-normal min-w-50 max-w-[180px] sm:max-w-none",
+        },
+        enableSorting: true,
+      },
+      /*{
         id: "description",
         accessorKey: "description",
         header: "Description",
@@ -117,7 +145,7 @@ export function useCompanyColumns({
           cellClassName: "min-w-0 max-w-[220px]",
         },
         enableSorting: true,
-      },
+      },*/
       {
         id: "category",
         accessorKey: "relationship_category",
@@ -128,7 +156,7 @@ export function useCompanyColumns({
         },
         enableSorting: true,
       },
-      {
+      /*{
         id: "why",
         header: "Why",
         cell: ({ row }) => (
@@ -158,8 +186,8 @@ export function useCompanyColumns({
         ),
         enableSorting: false,
         enableHiding: false,
-      },
+      },*/
     ],
-    [selected, allSelected, onToggleCompany, onToggleAll, onEditWhy, onDelete]
+    [selected, allSelected, onToggleCompany, onToggleAll, onEditWhy, onDelete],
   );
 }
