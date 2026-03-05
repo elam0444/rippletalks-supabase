@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Building2 } from "lucide-react";
+import { Building2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -99,6 +105,8 @@ export function TargetCompaniesTable({
     target: TargetCompany;
     company: Company;
   } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleWhyClick = (target: TargetCompany) => {
     const tc = target.target_company;
@@ -222,24 +230,46 @@ export function TargetCompaniesTable({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
-                      <EditTargetCompanyForm
-                        targetId={target.id}
-                        clientCompanyId={clientCompanyId}
-                        targetCompanyName={targetCompany?.name || "Unknown"}
-                        categories={categories}
-                        initialData={{
-                          relationship_category: category?.id || "",
-                          why: target.why,
-                          note: target.note,
-                        }}
-                      />
-                      <RemoveTargetCompanyButton
-                        targetId={target.id}
-                        clientCompanyId={clientCompanyId}
-                        targetCompanyName={targetCompany?.name || "Unknown"}
-                      />
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => setEditingId(target.id)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={() => setDeletingId(target.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <EditTargetCompanyForm
+                      targetId={target.id}
+                      clientCompanyId={clientCompanyId}
+                      targetCompanyName={targetCompany?.name || "Unknown"}
+                      categories={categories}
+                      initialData={{
+                        relationship_category: category?.id || "",
+                        why: target.why,
+                        note: target.note,
+                      }}
+                      open={editingId === target.id}
+                      onOpenChange={(open) => !open && setEditingId(null)}
+                    />
+                    <RemoveTargetCompanyButton
+                      targetId={target.id}
+                      clientCompanyId={clientCompanyId}
+                      targetCompanyName={targetCompany?.name || "Unknown"}
+                      open={deletingId === target.id}
+                      onOpenChange={(open) => !open && setDeletingId(null)}
+                    />
                   </TableCell>
                 </TableRow>
               );

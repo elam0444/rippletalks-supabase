@@ -10,25 +10,29 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
 import { removeTargetCompany } from "@/lib/actions/target-company"
 import { toast } from "sonner"
-import { Loader2, X } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 interface RemoveTargetCompanyButtonProps {
   targetId: string
   clientCompanyId: string
   targetCompanyName: string
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export function RemoveTargetCompanyButton({
   targetId,
   clientCompanyId,
   targetCompanyName,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: RemoveTargetCompanyButtonProps) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen
+  const setOpen = controlledOnOpenChange ?? setInternalOpen
   const [isDeleting, setIsDeleting] = useState(false)
 
   async function handleRemove() {
@@ -46,11 +50,6 @@ export function RemoveTargetCompanyButton({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-          <X className="h-4 w-4" />
-        </Button>
-      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Remove Target Company</AlertDialogTitle>
