@@ -27,7 +27,7 @@ export function DateSelectionCard({
         type="checkbox"
         checked={isSelected}
         onChange={onToggle}
-        className="w-5 h-5"
+        className="w-5 h-5 accent-green-600"
       />
     </motion.label>
   );

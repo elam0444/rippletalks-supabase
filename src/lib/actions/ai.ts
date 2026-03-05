@@ -35,7 +35,7 @@ Each company should include:
 - industry (must use exactly this key name) from the following options: ${availableIndustries.join(", ")}
 - why
 - a contact object with "name" (first and last name only, no title), "title" (job title separately), and "email" fields for a person who could be useful for outreach
-- a relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
+- a relationship_category (must use exactly this key name) from the following options: Prospect
 
 Output strictly as a JSON object with a "companies" array. Do NOT return the same company described in the input.
 

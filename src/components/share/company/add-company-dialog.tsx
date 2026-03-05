@@ -56,15 +56,16 @@ export function AddCompanyDialog({
         body: JSON.stringify({
           token,
           name: name.trim(),
-          website_url: websiteUrl.trim() || undefined,
+          website: websiteUrl.trim() || undefined,
         }),
       });
       const data = await res.json();
       if (res.ok && data.company) {
+        console.log('company', data.company)
         const newCompany: Company = {
           id: data.company.id,
           name: data.company.name,
-          website_url: data.company.website_url,
+          website: data.company.website,
           selected: true,
         };
         onAddCompany(newCompany);

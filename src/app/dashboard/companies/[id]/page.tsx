@@ -45,6 +45,7 @@ import {
   getAvailableCompaniesToTarget,
 } from "@/lib/actions/target-company";
 import ContactDatesModal from "@/components/dashboard/contact-dates-modal";
+import { CompanyLogoImage } from "@/components/dashboard/company-logo-image";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -169,6 +170,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         {/* Company Header */}
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-4'>
+            <>{console.log(company)}</>
             {company.logo_url ? (
               <Image
                 src={company.logo_url}
@@ -178,9 +180,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 className='h-16 w-16 rounded-lg object-cover'
               />
             ) : (
-              <div className='flex h-16 w-16 items-center justify-center rounded-lg bg-muted'>
-                <Building2 className='h-8 w-8 text-muted-foreground' />
-              </div>
+              <CompanyLogoImage  name={company.name} logoUrl={company.logo_url} website={company.website}/>
             )}
             <div>
               <h1 className='text-2xl font-bold'>{company.name}</h1>

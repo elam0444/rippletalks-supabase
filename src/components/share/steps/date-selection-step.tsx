@@ -49,12 +49,12 @@ export function DateSelectionStep({
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center">
+      {/*<div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center">
         <StepIndicator step={1} label="Select Dates" />
         <Button onClick={onNext} disabled={!hasSelectedDates}>
           Next: Select Opportunities →
         </Button>
-      </div>
+      </div>*/}
     </motion.div>
   );
 }

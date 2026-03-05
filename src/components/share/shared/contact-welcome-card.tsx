@@ -21,7 +21,7 @@ export function ContactWelcomeCard({
         </h2>
       </div>
 
-      <p className='text-base text-gray-600'>
+      <p className='text-base text-gray-900'>
         We’re excited to host you as our {contact.panelist_type || "Guest"} on
         our upcoming fireside chat.
       </p>

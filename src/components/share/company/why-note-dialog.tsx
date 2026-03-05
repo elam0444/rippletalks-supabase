@@ -12,7 +12,11 @@ interface WhyNoteDialogProps {
   onSave: (why: string, note: string) => Promise<void>;
 }
 
-export function WhyNoteDialog({ company, onClose, onSave }: WhyNoteDialogProps) {
+export function WhyNoteDialog({
+  company,
+  onClose,
+  onSave,
+}: WhyNoteDialogProps) {
   const [whyText, setWhyText] = useState("");
   const [noteText, setNoteText] = useState("");
   const [saving, setSaving] = useState(false);
