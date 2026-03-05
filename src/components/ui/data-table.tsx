@@ -302,7 +302,7 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                   className={cn(
                     "group transition-all duration-200",
-                    rowIsActive?.(row.original)
+                    rowIsActive === undefined || rowIsActive(row.original)
                       ? "bg-background"
                       : "bg-muted/40 opacity-60 grayscale-[0.4]",
                   )}
