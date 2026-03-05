@@ -35,7 +35,8 @@ import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
 
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255),
+  first_name: z.string().max(255).optional(),
+  last_name: z.string().max(255).optional(),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   title: z.string().max(255).optional(),
   phone: z.string().max(50).optional(),
@@ -64,7 +65,8 @@ export function AddContactForm({ companyId, companyName }: AddContactFormProps) 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      first_name: "",
+      last_name: "",
       email: "",
       title: "",
       phone: "",
@@ -87,7 +89,8 @@ export function AddContactForm({ companyId, companyName }: AddContactFormProps) 
 
     const result = await createContact({
       company_id: companyId,
-      name: values.name,
+      first_name: values.first_name || null,
+      last_name: values.last_name || null,
       email: values.email || null,
       title: values.title || null,
       phone: values.phone || null,
@@ -123,19 +126,34 @@ export function AddContactForm({ companyId, companyName }: AddContactFormProps) 
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

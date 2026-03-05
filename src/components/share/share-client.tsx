@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ContactWelcomeCard } from "./shared/contact-welcome-card";
 import { DateSelectionStep } from "./steps/date-selection-step";
 import { CompanySelectionStep } from "./steps/company-selection-step";
 import { ConfirmationStep } from "./steps/confirmation-step";
-import { WhyNoteDialog } from "./company/why-note-dialog";
+import { WhyNotePopup } from "./company/why-note-popup";
 import { DeleteCompanyDialog } from "./company/delete-company-dialog";
 import { BrowseCompaniesDialog } from "./company/browse-companies-dialog";
 import { AddCompanyDialog } from "./company/add-company-dialog";
@@ -36,6 +36,8 @@ export function ShareClient({
   token,
 }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [alwaysVisible, setAlwaysVisible] = useState(true);
+  const step2Ref = useRef<HTMLDivElement | null>(null);
 
   // --- Step 1: Contact Dates ---
   const [dates, setDates] = useState(initialDates);
@@ -44,18 +46,46 @@ export function ShareClient({
     async (date: string) => {
       const current = dates.find((d) => d.available_date === date);
       if (!current) return;
+      // Single-select: selecting a date deselects all others
       const newValue = !current.is_selected;
 
-      // Optimistically update UI
+      // Optimistically update UI — deselect all, then select the toggled one
+      const prevDates = dates;
       setDates((prev) =>
-        prev.map((d) =>
-          d.available_date === date ? { ...d, is_selected: newValue } : d,
-        ),
+        prev.map((d) => ({
+          ...d,
+          is_selected: d.available_date === date ? newValue : false,
+        })),
       );
+
+      // Auto-scroll to step 2 when a date is selected
+      if (newValue) {
+        setTimeout(() => {
+          const el = step2Ref.current;
+          if (!el) return;
+          const top = el.getBoundingClientRect().top + window.scrollY - 24;
+          window.scrollTo({ top, behavior: "smooth" });
+        }, 300); // slight delay feels more natural
+      }
 
       if (token) {
         try {
-          const res = await fetch("/api/share/update-date", {
+          // Deselect previously selected dates (other than the toggled one)
+          const deselects = prevDates
+            .filter((d) => d.available_date !== date && d.is_selected)
+            .map((d) =>
+              fetch("/api/share/update-date", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  token,
+                  availableDate: d.available_date,
+                  isSelected: false,
+                }),
+              }),
+            );
+
+          const toggle = fetch("/api/share/update-date", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -64,26 +94,20 @@ export function ShareClient({
               isSelected: newValue,
             }),
           });
-          if (!res.ok) {
-            const data = await res.json();
-            console.error("API error:", data.error);
-            // Revert on failure
-            setDates((prev) =>
-              prev.map((d) =>
-                d.available_date === date
-                  ? { ...d, is_selected: !newValue }
-                  : d,
-              ),
-            );
+
+          const results = await Promise.all([...deselects, toggle]);
+          for (const res of results) {
+            if (!res.ok) {
+              const data = await res.json();
+              console.error("API error:", data.error);
+              // Revert on any failure
+              setDates(prevDates);
+              return;
+            }
           }
         } catch (err) {
           console.error("Unexpected API error:", err);
-          // Revert on failure
-          setDates((prev) =>
-            prev.map((d) =>
-              d.available_date === date ? { ...d, is_selected: !newValue } : d,
-            ),
-          );
+          setDates(prevDates);
         }
       }
     },
@@ -272,7 +296,7 @@ export function ShareClient({
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* --- Step 1: Date Selection --- */}
-      {step === 1 && (
+      {(step === 1 || (alwaysVisible && step !== 3)) && (
         <>
           {/* Shared Contact Info */}
           {sharedContact && (
@@ -292,40 +316,43 @@ export function ShareClient({
 
       {/* --- Step 2: Company Selection --- */}
       <AnimatePresence mode="wait">
-        {step === 2 && (
-          <CompanySelectionStep
-            companies={companiesList}
-            selected={selected}
-            viewMode={viewMode}
-            token={token}
-            isMobile={isMobile}
-            onToggleCompany={toggleCompany}
-            onToggleAll={toggleAll}
-            onEditWhy={setActiveCompany}
-            onDelete={setCompanyToDelete}
-            onViewModeChange={setViewMode}
-            onBrowseClick={() => setBrowseOpen(true)}
-            onAddClick={() => setAddCompanyOpen(true)}
-            onBack={() => setStep(1)}
-            onNext={() => setStep(3)}
-            companyName={sharedCompany?.name || null}
-          />
-        )}
+        <div ref={step2Ref}>
+          {(step === 2 || (alwaysVisible && step !== 3)) && (
+            <CompanySelectionStep
+              key="company-selection"
+              companies={companiesList}
+              selected={selected}
+              viewMode={viewMode}
+              token={token}
+              isMobile={isMobile}
+              onToggleCompany={toggleCompany}
+              onToggleAll={toggleAll}
+              onEditWhy={setActiveCompany}
+              onDelete={setCompanyToDelete}
+              onViewModeChange={setViewMode}
+              // onBrowseClick={() => setBrowseOpen(true)}
+              onAddClick={() => setAddCompanyOpen(true)}
+              onBack={() => setStep(1)}
+              onNext={() => setStep(3)}
+              companyName={sharedCompany?.name || null}
+            />
+          )}
+        </div>
 
         {/* --- Step 3: Confirmation --- */}
         {step === 3 && (
           <ConfirmationStep
-            selectedDatesCount={dates.filter((d) => d.is_selected).length}
-            selectedCompaniesCount={
-              Object.values(selected).filter(Boolean).length
-            }
+            key="confirmation"
             onBack={() => setStep(2)}
+            selectedDate={
+              dates.find((d) => d.is_selected)?.available_date ?? null
+            }
           />
         )}
       </AnimatePresence>
 
       {/* --- Dialogs --- */}
-      <WhyNoteDialog
+      <WhyNotePopup
         company={activeCompany}
         onClose={() => setActiveCompany(null)}
         onSave={saveWhyAndNote}

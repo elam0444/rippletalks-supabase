@@ -26,11 +26,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { updateTargetCompany } from "@/lib/actions/target-company";
 import { toast } from "sonner";
-import { Loader2, Pencil } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   relationship_category: z.string().uuid("Please select a category"),
@@ -55,6 +54,8 @@ interface EditTargetCompanyFormProps {
     why?: string | null;
     note?: string | null;
   };
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function EditTargetCompanyForm({
@@ -63,8 +64,12 @@ export function EditTargetCompanyForm({
   targetCompanyName,
   categories,
   initialData,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: EditTargetCompanyFormProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange ?? setInternalOpen;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
@@ -97,15 +102,6 @@ export function EditTargetCompanyForm({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant='ghost'
-          size='icon'
-          className='h-8 w-8 text-muted-foreground hover:text-foreground'
-        >
-          <Pencil className='h-4 w-4' />
-        </Button>
-      </DialogTrigger>
       <DialogContent className='sm:max-w-[500px]'>
         <DialogHeader>
           <DialogTitle>Edit Target Company</DialogTitle>

@@ -23,12 +23,22 @@ interface ContactDatesModalProps {
 }
 
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
-  const h = Math.floor(i / 2)
-    .toString()
-    .padStart(2, "0");
-  const m = i % 2 === 0 ? "00" : "30";
-  return `${h}:${m}`;
+  const totalMinutes = i * 30;
+  const h24 = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60 === 0 ? "00" : "30";
+  const period = h24 < 12 ? "AM" : "PM";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12.toString().padStart(2, "0")}:${m} ${period}`;
 });
+
+// Parse "hh:mm AM/PM" into { h24, minutes }
+function parseTime(time: string): { h24: number; minutes: number } {
+  const [timePart, period] = time.split(" ");
+  const [h12, minutes] = timePart.split(":").map(Number);
+  let h24 = h12 % 12; // 12 AM -> 0, 12 PM -> 12
+  if (period === "PM") h24 += 12;
+  return { h24, minutes };
+}
 
 export default function ContactDatesModal({
   contactId,
@@ -55,7 +65,11 @@ export default function ContactDatesModal({
         if (error) throw error;
 
         if (data) {
-          setSelectedDates(data.map((d) => new Date(d.available_date)));
+          setSelectedDates(
+            data
+              .map((d) => new Date(d.available_date))
+              .filter((d) => !isNaN(d.getTime())), // guard invalid dates
+          );
         }
       } catch (err) {
         console.error("Error fetching dates:", err);
@@ -66,27 +80,24 @@ export default function ContactDatesModal({
   }, [open, contactId, supabase]);
 
   const handleTimeChange = (index: number, time: string) => {
-    const [hours, minutes] = time.split(":").map(Number);
+    const { h24, minutes } = parseTime(time);
     const newDates = [...selectedDates];
     const date = new Date(newDates[index]);
-    date.setHours(hours, minutes, 0, 0);
+    date.setHours(h24, minutes, 0, 0);
     newDates[index] = date;
     setSelectedDates(newDates);
   };
 
   const isTimeDisabled = (date: Date, time: string) => {
     if (!isToday(date)) return false;
-
-    const [h, m] = time.split(":").map(Number);
+    const { h24, minutes } = parseTime(time);
     const slot = new Date(date);
-    slot.setHours(h, m, 0, 0);
-
+    slot.setHours(h24, minutes, 0, 0);
     return isBefore(slot, startOfMinute(new Date()));
   };
 
   const handleSave = async () => {
     setLoading(true);
-
     try {
       await supabase
         .from("contact_available_dates")
@@ -139,7 +150,8 @@ export default function ContactDatesModal({
               onMonthChange={setMonth}
               selected={selectedDates}
               onSelect={(dates) => {
-                if (Array.isArray(dates)) setSelectedDates(dates);
+                if (Array.isArray(dates))
+                  setSelectedDates(dates.filter((d) => !isNaN(d.getTime())));
               }}
               hideNavigation
             />
@@ -152,59 +164,59 @@ export default function ContactDatesModal({
               </p>
             )}
 
-            {selectedDates.map((date, index) => {
-              const selectedTime = format(date, "HH:mm");
-              const isEditing = activeIndex === index;
+            {selectedDates
+              .filter((d) => !isNaN(d.getTime()))
+              .map((date, index) => {
+                const selectedTime = format(date, "hh:mm aa");
+                const isEditing = activeIndex === index;
 
-              return (
-                <div key={date.toISOString()} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium">
-                      {format(date, "PPP")}
+                return (
+                  <div key={date.toISOString()} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium">
+                        {format(date, "PPP")}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setActiveIndex(isEditing ? null : index)
+                        }
+                        className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+                      >
+                        🕘 {selectedTime}
+                      </button>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setActiveIndex(index)}
-                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
-                    >
-                      🕘 {selectedTime}
-                    </button>
+                    {isEditing && (
+                      <div className="max-h-64 overflow-y-auto border rounded-xl p-2 space-y-1">
+                        {TIME_SLOTS.map((time) => {
+                          const selected = selectedTime === time;
+                          const disabled = isTimeDisabled(date, time);
+
+                          return (
+                            <button
+                              key={time}
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => {
+                                handleTimeChange(index, time);
+                                setActiveIndex(null);
+                              }}
+                              className={`w-full px-3 py-2 rounded-lg text-left text-sm transition ${
+                                selected
+                                  ? "bg-primary text-primary-foreground"
+                                  : "hover:bg-muted"
+                              } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                            >
+                              {time}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-
-                  {isEditing && (
-                    <div className="max-h-64 overflow-y-auto border rounded-xl p-2 space-y-1">
-                      {TIME_SLOTS.map((time) => {
-                        const selected = selectedTime === time;
-                        const disabled = isTimeDisabled(date, time);
-
-                        return (
-                          <button
-                            key={time}
-                            type="button"
-                            disabled={disabled}
-                            onClick={() => {
-                              handleTimeChange(index, time);
-                              setActiveIndex(null);
-                            }}
-                            className={`w-full px-3 py-2 rounded-lg text-left text-sm transition
-                  ${
-                    selected
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
-                  }
-                  ${disabled ? "opacity-40 cursor-not-allowed" : ""}
-                `}
-                          >
-                            {time}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
 

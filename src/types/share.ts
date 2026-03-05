@@ -16,6 +16,7 @@ export interface Company {
 
 export interface Contact {
   id: string;
+  first_name?: string;
   name: string;
   email?: string;
   title?: string;

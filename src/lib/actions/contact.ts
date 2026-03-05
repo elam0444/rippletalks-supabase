@@ -6,7 +6,8 @@ import { z } from "zod";
 
 const contactSchema = z.object({
   company_id: z.string().uuid(),
-  name: z.string().min(1, "Name is required").max(255),
+  first_name: z.string().max(255).optional().nullable(),
+  last_name: z.string().max(255).optional().nullable(),
   email: z
     .string()
     .email("Invalid email")
@@ -60,7 +61,8 @@ export async function createContact(
 
   const {
     company_id,
-    name,
+    first_name,
+    last_name,
     email,
     title,
     phone,
@@ -68,11 +70,15 @@ export async function createContact(
     panelist_type_id,
   } = parsed.data;
 
+  const name = [first_name, last_name].filter(Boolean).join(" ");
+
   const { data, error } = await supabase
     .from("contacts")
     .insert({
       company_id,
       name,
+      first_name: first_name || null,
+      last_name: last_name || null,
       email: email || null,
       title: title || null,
       phone: phone || null,
@@ -102,7 +108,8 @@ export async function updateContact(
   id: string,
   companyId: string,
   formData: {
-    name: string;
+    first_name: string;
+    last_name: string;
     email?: string | null;
     title?: string | null;
     phone?: string | null;
@@ -119,10 +126,16 @@ export async function updateContact(
     return { success: false, error: "Unauthorized" };
   }
 
+  const fullName = [formData.first_name, formData.last_name]
+    .filter(Boolean)
+    .join(" ");
+
   const { error } = await supabase
     .from("contacts")
     .update({
-      name: formData.name,
+      name: fullName,
+      first_name: formData.first_name || null,
+      last_name: formData.last_name || null,
       email: formData.email || null,
       title: formData.title || null,
       phone: formData.phone || null,
@@ -183,6 +196,8 @@ export async function getContactsByCompanyId(companyId: string) {
       `
       id,
       name,
+      first_name,
+      last_name,
       email,
       title,
       phone,

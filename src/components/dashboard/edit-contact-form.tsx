@@ -35,7 +35,8 @@ import { toast } from "sonner";
 import { Loader2, Pencil } from "lucide-react";
 
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255),
+  first_name: z.string().min(1, "First name is required").max(255),
+  last_name: z.string().min(1, "Last name is required").max(255),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   title: z.string().max(255).optional(),
   phone: z.string().max(50).optional(),
@@ -54,7 +55,8 @@ interface EditContactFormProps {
   contactId: string;
   companyId: string;
   initialData: {
-    name: string;
+    first_name?: string | null;
+    last_name?: string | null;
     email?: string | null;
     title?: string | null;
     phone?: string | null;
@@ -76,7 +78,8 @@ export function EditContactForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData.name,
+      first_name: initialData.first_name || "",
+      last_name: initialData.last_name || "",
       email: initialData.email || "",
       title: initialData.title || "",
       phone: initialData.phone || "",
@@ -89,7 +92,8 @@ export function EditContactForm({
   useEffect(() => {
     if (!open) return;
     form.reset({
-      name: initialData.name,
+      first_name: initialData.first_name || "",
+      last_name: initialData.last_name || "",
       email: initialData.email || "",
       title: initialData.title || "",
       phone: initialData.phone || "",
@@ -109,7 +113,8 @@ export function EditContactForm({
     setIsSubmitting(true);
 
     const result = await updateContact(contactId, companyId, {
-      name: values.name,
+      first_name: values.first_name,
+      last_name: values.last_name,
       email: values.email || null,
       title: values.title || null,
       phone: values.phone || null,
@@ -142,24 +147,39 @@ export function EditContactForm({
         <DialogHeader>
           <DialogTitle>Edit Contact</DialogTitle>
           <DialogDescription>
-            Update contact details for {initialData.name}
+            Update contact details for {[initialData.first_name, initialData.last_name].filter(Boolean).join(" ")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
