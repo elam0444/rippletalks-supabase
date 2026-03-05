@@ -438,7 +438,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5" />
-              Selected Availability Dates
+              Suggested Dates for Fireside Chat
             </CardTitle>
             <CardDescription>
               Dates contacts at {company.name} are available
