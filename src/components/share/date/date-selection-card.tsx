@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { formatDate } from "@/lib/utils/text-utils";
+import { formatDate, formatAvailableDate } from "@/lib/utils/text-utils";
 
 interface DateSelectionCardProps {
   date: string;
@@ -22,7 +22,7 @@ export function DateSelectionCard({
       }`}
       whileHover={{ scale: 1.02 }}
     >
-      <span>{formatDate(date)}</span>
+      <span>{formatAvailableDate(date)}</span>
       <input
         type="checkbox"
         checked={isSelected}
