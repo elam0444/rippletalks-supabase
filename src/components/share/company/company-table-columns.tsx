@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Building2, Trash2 } from "lucide-react";
+import { Building2, Trash2, X } from "lucide-react";
 import { getLogoDevUrl } from "@/lib/utils/logo-utils";
 import { Button } from "@/components/ui/button";
 import { CompanyCheckbox } from "./company-checkbox";
@@ -48,7 +48,8 @@ interface UseCompanyColumnsOptions {
   allSelected: boolean;
   onToggleCompany: (id: string) => void;
   onToggleAll: () => void;
-  onEditWhy: (company: Company) => void;
+  onEditWhy: (company: Company, anchor: HTMLElement) => void;
+  onCloseWhy: () => void;
   onDelete: (company: Company) => void;
 }
 
@@ -61,6 +62,7 @@ export function useCompanyColumns({
   onToggleCompany,
   onToggleAll,
   onEditWhy,
+  onCloseWhy,
   onDelete,
 }: UseCompanyColumnsOptions): ColumnDef<Company, unknown>[] {
   return useMemo<ColumnDef<Company, unknown>[]>(
@@ -68,14 +70,12 @@ export function useCompanyColumns({
       {
         id: "select",
         header: () => (
-          <>
-            {/*<CompanyCheckbox
+          <CompanyCheckbox
             checked={allSelected}
             onToggle={onToggleAll}
             ariaLabel={allSelected ? "Deselect all" : "Select all"}
             variant="header"
-          />*/}
-          </>
+          />
         ),
         cell: ({ row }) => (
           <div className="flex justify-center">
@@ -95,7 +95,8 @@ export function useCompanyColumns({
         cell: ({ row }) => (
           <div
             className="flex items-center gap-2 min-w-0 cursor-pointer"
-            onClick={() => onEditWhy(row.original)}
+            onMouseEnter={(e) => onEditWhy(row.original, e.currentTarget)}
+            onMouseLeave={() => onCloseWhy()}
           >
             <CompanyLogo
               name={row.original.name}
@@ -170,7 +171,7 @@ export function useCompanyColumns({
         ),
         enableSorting: false,
         enableHiding: false,
-      },
+      },*/
       {
         id: "actions",
         header: "Actions",
@@ -181,12 +182,12 @@ export function useCompanyColumns({
             onClick={() => onDelete(row.original)}
             aria-label="Remove company"
           >
-            <Trash2 size={16} />
+            <X size={16} />
           </Button>
         ),
         enableSorting: false,
         enableHiding: false,
-      },*/
+      }
     ],
     [selected, allSelected, onToggleCompany, onToggleAll, onEditWhy, onDelete],
   );

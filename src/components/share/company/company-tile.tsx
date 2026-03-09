@@ -12,10 +12,18 @@ interface CompanyTileProps {
   isSelected: boolean;
   onToggle: () => void;
   onDelete: () => void;
-  onEditWhy: () => void;
+  onEditWhy: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
-function CompanyLogo({ name, logoUrl, website }: { name: string; logoUrl?: string | null; website?: string | null }) {
+function CompanyLogo({
+  name,
+  logoUrl,
+  website,
+}: {
+  name: string;
+  logoUrl?: string | null;
+  website?: string | null;
+}) {
   const [error, setError] = useState(false);
   const src = !error ? logoUrl || getLogoDevUrl(website) : null;
 
@@ -73,14 +81,18 @@ export function CompanyTile({
           {isSelected && <Check size={12} />}
         </button>
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <CompanyLogo name={company.name} logoUrl={company.logo_url} website={company.website} />
+          <CompanyLogo
+            name={company.name}
+            logoUrl={company.logo_url}
+            website={company.website}
+          />
           <p className="font-semibold text-gray-800">{company.name}</p>
           {company.description && (
             <p className="mt-1 text-sm text-gray-500">{company.description}</p>
           )}
         </div>
       </div>
-      <Button variant="outline" className="mt-4 w-full" onClick={onEditWhy}>
+      <Button variant="outline" className="mt-4 w-full" onClick={(e) => onEditWhy(e)}>
         Why
       </Button>
     </div>

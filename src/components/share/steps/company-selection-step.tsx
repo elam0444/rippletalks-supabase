@@ -29,7 +29,7 @@ interface CompanySelectionStepProps {
   isMobile?: boolean;
   onToggleCompany: (id: string) => void;
   onToggleAll: () => void;
-  onEditWhy: (company: Company) => void;
+  onEditWhy: (company: Company, anchor: HTMLElement) => void;
   onDelete: (company: Company) => void;
   onViewModeChange: (mode: "tiles" | "table") => void;
   // onBrowseClick: () => void;
@@ -67,6 +67,7 @@ export function CompanySelectionStep({
     onToggleCompany,
     onToggleAll,
     onEditWhy,
+    onCloseWhy: () => onEditWhy(null as any, null as any),
     onDelete,
   });
 
@@ -127,7 +128,7 @@ export function CompanySelectionStep({
       <Card className="space-y-0">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold text-gray-900">
-            Step 2: Select CEOs
+            Step 2: Choose which CEOs you would like to attend this fireside
           </CardTitle>
           <CardDescription className="text-base text-gray-900 space-y-3">
             <p>
@@ -189,7 +190,7 @@ export function CompanySelectionStep({
                           isSelected={selected[company.id]}
                           onToggle={() => onToggleCompany(company.id)}
                           onDelete={() => onDelete(company)}
-                          onEditWhy={() => onEditWhy(company)}
+                          onEditWhy={(e) => onEditWhy(company, e.currentTarget)}
                         />
                       ))}
                     </div>
@@ -221,7 +222,7 @@ export function CompanySelectionStep({
       </Card>
 
       {/* Done button */}
-      <div className="space-y-6 text-center pt-6">
+      <div className="hidden space-y-6 text-center pt-6">
         <Button
           onClick={onNext}
           className="bg-green-600 hover:bg-green-700 h-14 px-8 text-lg font-semibold cursor-pointer"
