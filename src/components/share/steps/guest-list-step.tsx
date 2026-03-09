@@ -105,8 +105,7 @@ export function GuestListStep({
           <CardDescription className="text-base text-gray-900">
             Add up to 10 guests you would like to invite to attend this
             invite-only fireside chat. Include their first name, last name,
-            title, company, LinkedIn URL, and email address — or paste a link to
-            your Google Sheet.
+            title, company, LinkedIn URL, and email address.
           </CardDescription>
         </CardHeader>
 
