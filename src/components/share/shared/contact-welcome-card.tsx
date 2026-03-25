@@ -11,9 +11,9 @@ export function ContactWelcomeCard({
   company,
 }: ContactWelcomeCardProps) {
   return (
-    <div className='bg-white border rounded-lg p-6 shadow-sm space-y-3'>
+    <div className='p-6 space-y-3'>
       <div className='flex items-center gap-3'>
-        <div className='hidden flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 shrink-0'>
+        <div className='hidden h-12 w-12 items-center justify-center rounded-full bg-gray-100 shrink-0'>
           <User className='h-6 w-6 text-gray-400' />
         </div>
         <h2 className='text-2xl font-semibold text-gray-900'>

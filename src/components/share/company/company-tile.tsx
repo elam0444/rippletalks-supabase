@@ -10,9 +10,11 @@ import type { Company } from "@/types/share";
 interface CompanyTileProps {
   company: Company;
   isSelected: boolean;
+  isWhyOpen: boolean;
   onToggle: () => void;
   onDelete: () => void;
   onEditWhy: (e: React.MouseEvent<HTMLElement>) => void;
+  onCloseWhy: () => void;
 }
 
 function CompanyLogo({
@@ -53,9 +55,11 @@ function CompanyLogo({
 export function CompanyTile({
   company,
   isSelected,
+  isWhyOpen,
   onToggle,
   onDelete,
   onEditWhy,
+  onCloseWhy,
 }: CompanyTileProps) {
   return (
     <div className="relative flex flex-col p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white">
@@ -92,7 +96,11 @@ export function CompanyTile({
           )}
         </div>
       </div>
-      <Button variant="outline" className="mt-4 w-full" onClick={(e) => onEditWhy(e)}>
+      <Button
+        variant="outline"
+        className="mt-4 w-full"
+        onClick={(e) => (isWhyOpen ? onCloseWhy() : onEditWhy(e))}
+      >
         Why
       </Button>
     </div>

@@ -111,7 +111,7 @@ export function GuestListStep({
 
         <CardContent className="space-y-6">
           {/* Mode toggle */}
-          <div className="flex gap-2 hidden">
+          <div className="flex gap-2">
             <Button
               variant={mode === "manual" ? "default" : "outline"}
               size="sm"
