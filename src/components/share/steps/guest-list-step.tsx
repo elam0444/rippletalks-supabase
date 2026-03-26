@@ -158,7 +158,7 @@ export function GuestListStep({
     >
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold text-gray-900">
+          <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-900">
             Step 3: Add your guest list
           </CardTitle>
           <CardDescription className="text-base text-gray-900">
@@ -224,7 +224,7 @@ export function GuestListStep({
                     Columns: First Name, Last Name, LinkedIn URL — up to 10 guests
                   </p>
                 </div>
-                <div className="flex justify-center gap-3">
+                <div className="flex flex-wrap justify-center gap-3">
                   <Button
                     variant="outline"
                     size="sm"
@@ -261,7 +261,7 @@ export function GuestListStep({
               {guests.map((guest, i) => (
                 <div
                   key={i}
-                  className="relative grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 pt-8 border rounded-lg bg-gray-50"
+                  className="relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 p-4 pt-8 border rounded-lg bg-gray-50"
                 >
                   <span className="absolute top-3 left-4 text-xs font-medium text-gray-400">
                     Guest {i + 1}

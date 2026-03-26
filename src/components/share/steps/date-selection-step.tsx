@@ -28,12 +28,12 @@ export function DateSelectionStep({
 
   return (
     <motion.div
-      className="bg-white border rounded-lg p-6 shadow-sm space-y-6"
+      className="bg-white border rounded-lg p-4 sm:p-6 shadow-sm space-y-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
     >
-      <h2 className="text-2xl font-semibold text-gray-900">
+      <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
         Step 1: Select the date that works best to join us as our {panelistType || 'guest'}
       </h2>
       {dates.length === 0 ? (

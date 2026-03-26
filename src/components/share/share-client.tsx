@@ -298,7 +298,7 @@ export function ShareClient({
   };
 
   return (
-    <div className='max-w-6xl mx-auto p-6 space-y-6'>
+    <div className='max-w-6xl mx-auto px-4 py-4 sm:p-6 space-y-6'>
       {/* --- Step 1: Date Selection --- */}
       {(step === 1 || (alwaysVisible && step < 5)) && (
         <>

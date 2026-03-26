@@ -132,7 +132,7 @@ export function CompanySelectionStep({
     >
       <Card className="space-y-0">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold text-gray-900">
+          <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-900">
             Step 2: Choose which CEOs you would like to attend this fireside
           </CardTitle>
           <CardDescription className="text-base text-gray-900 space-y-3">

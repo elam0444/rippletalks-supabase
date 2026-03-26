@@ -22,7 +22,7 @@ export function ConfirmationStep({ onBack, selectedDate, timeZone }: Confirmatio
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className='bg-white border rounded-lg p-8 md:p-12 shadow-sm text-center space-y-6'
+      className='bg-white border rounded-lg p-6 sm:p-8 md:p-12 shadow-sm text-center space-y-6'
     >
       <div className='flex justify-center'>
         <div className='flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600'>
