@@ -228,8 +228,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
               }}
               trigger={
                 <Button variant="outline" size="sm">
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit
+                  <Pencil className="h-4 w-4" />
                 </Button>
               }
             />
