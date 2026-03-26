@@ -31,6 +31,13 @@ export default async function Home() {
           Securely access your creator tools, analytics, and community controls.
         </p>
 
+        {/* Credibility Video */}
+        <video
+          src="https://jgqftfaxxfumnxajjukg.supabase.co/storage/v1/object/public/videos/Ripple%20Talks%20Credibility%20Video%20(home%20page%20main%20video)%20-%20March%202026%20version.mov"
+          controls
+          className="w-full max-w-2xl rounded-lg shadow-lg"
+        />
+
         {/* Buttons */}
         <div className='flex gap-4 justify-center'>
           {user ? (
