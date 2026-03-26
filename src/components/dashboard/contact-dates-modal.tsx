@@ -51,6 +51,7 @@ export default function ContactDatesModal({
   const supabase = createClient();
   const [open, setOpen] = useState(false);
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [confirmedDates, setConfirmedDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [month, setMonth] = useState(new Date());
@@ -60,6 +61,7 @@ export default function ContactDatesModal({
 
     async function fetchDates() {
       try {
+        // Fetch this contact's available dates
         const { data, error } = await supabase
           .from("contact_available_dates")
           .select("available_date")
@@ -72,7 +74,25 @@ export default function ContactDatesModal({
           setSelectedDates(
             data
               .map((d) => new Date(d.available_date))
-              .filter((d) => !isNaN(d.getTime())), // guard invalid dates
+              .filter((d) => !isNaN(d.getTime())),
+          );
+        }
+
+        // Fetch confirmed event dates: dates selected by Special Guest contacts in the same company
+        const { data: confirmedData } = await supabase
+          .from("contact_available_dates")
+          .select("available_date, contacts!inner(panelist_type_id, panelist_types!inner(name))")
+          .eq("company_id", companyId)
+          .eq("is_selected", true)
+          .eq("contacts.panelist_types.name", "Special Guest")
+          .neq("contact_id", contactId)
+          .order("available_date", { ascending: true });
+
+        if (confirmedData) {
+          setConfirmedDates(
+            confirmedData
+              .map((d) => new Date(d.available_date))
+              .filter((d) => !isNaN(d.getTime())),
           );
         }
       } catch (err) {
@@ -81,7 +101,7 @@ export default function ContactDatesModal({
     }
 
     fetchDates();
-  }, [open, contactId, supabase]);
+  }, [open, contactId, companyId, supabase]);
 
   const handleTimeChange = (index: number, time: string) => {
     const { h24, minutes } = parseTime(time);
@@ -98,6 +118,18 @@ export default function ContactDatesModal({
     const slot = new Date(date);
     slot.setHours(h24, minutes, 0, 0);
     return isBefore(slot, startOfMinute(new Date()));
+  };
+
+  const addConfirmedDate = (date: Date) => {
+    const alreadyAdded = selectedDates.some(
+      (d) => d.toISOString() === date.toISOString(),
+    );
+    if (alreadyAdded) return;
+    const newDates = [...selectedDates, date].sort(
+      (a, b) => a.getTime() - b.getTime(),
+    );
+    setSelectedDates(newDates);
+    setMonth(date);
   };
 
   const handleSave = async () => {
@@ -144,6 +176,37 @@ export default function ContactDatesModal({
         <DialogHeader>
           <DialogTitle>Select Available Dates & Times</DialogTitle>
         </DialogHeader>
+
+        {confirmedDates.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Confirmed Event Dates — Quick Add
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {confirmedDates.map((date) => {
+                const alreadyAdded = selectedDates.some(
+                  (d) => d.toISOString() === date.toISOString(),
+                );
+                return (
+                  <button
+                    key={date.toISOString()}
+                    type="button"
+                    disabled={alreadyAdded}
+                    onClick={() => addConfirmedDate(date)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium border transition ${
+                      alreadyAdded
+                        ? "border-green-300 bg-green-50 text-green-700 cursor-default"
+                        : "border-border bg-muted hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                    }`}
+                  >
+                    {alreadyAdded ? "✓ " : "+ "}
+                    {format(date, "MMM d, yyyy")} · {format(date, "hh:mm aa")}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-[1fr_240px] gap-6 py-4">
           <div className="space-y-2">
