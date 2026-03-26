@@ -30,6 +30,8 @@ interface CompanySelectionStepProps {
   onToggleCompany: (id: string) => void;
   onToggleAll: () => void;
   onEditWhy: (company: Company, anchor: HTMLElement) => void;
+  onCloseWhy: () => void;
+  activeCompanyId?: string | null;
   onDelete: (company: Company) => void;
   onViewModeChange: (mode: "tiles" | "table") => void;
   // onBrowseClick: () => void;
@@ -51,6 +53,8 @@ export function CompanySelectionStep({
   onToggleCompany,
   onToggleAll,
   onEditWhy,
+  onCloseWhy,
+  activeCompanyId,
   onDelete,
   onViewModeChange,
   // onBrowseClick,
@@ -69,6 +73,7 @@ export function CompanySelectionStep({
     onEditWhy,
     onCloseWhy: () => onEditWhy(null as any, null as any),
     onDelete,
+    isGuestView: !!token,
   });
 
   const groupedCompanies = useMemo(() => {
@@ -127,7 +132,7 @@ export function CompanySelectionStep({
     >
       <Card className="space-y-0">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold text-gray-900">
+          <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-900">
             Step 2: Choose which CEOs you would like to attend this fireside
           </CardTitle>
           <CardDescription className="text-base text-gray-900 space-y-3">
@@ -188,9 +193,11 @@ export function CompanySelectionStep({
                           key={company.id}
                           company={company}
                           isSelected={selected[company.id]}
+                          isWhyOpen={activeCompanyId === company.id}
                           onToggle={() => onToggleCompany(company.id)}
                           onDelete={() => onDelete(company)}
                           onEditWhy={(e) => onEditWhy(company, e.currentTarget)}
+                          onCloseWhy={onCloseWhy}
                         />
                       ))}
                     </div>

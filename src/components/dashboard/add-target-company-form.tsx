@@ -92,7 +92,7 @@ export function AddTargetCompanyForm({
   const [companyPopoverOpen, setCompanyPopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiDescription, setAiDescription] = useState("");
-  const [loadingCompany, setLoadingCompany] = useState(true);
+  const [loadingCompany, setLoadingCompany] = useState(false);
 
   useEffect(() => {
     if (!clientCompanyId) return;
