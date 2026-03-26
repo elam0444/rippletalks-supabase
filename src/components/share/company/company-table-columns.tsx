@@ -51,6 +51,7 @@ interface UseCompanyColumnsOptions {
   onEditWhy: (company: Company, anchor: HTMLElement) => void;
   onCloseWhy: () => void;
   onDelete: (company: Company) => void;
+  isGuestView?: boolean;
 }
 
 /**
@@ -64,6 +65,7 @@ export function useCompanyColumns({
   onEditWhy,
   onCloseWhy,
   onDelete,
+  isGuestView = false,
 }: UseCompanyColumnsOptions): ColumnDef<Company, unknown>[] {
   return useMemo<ColumnDef<Company, unknown>[]>(
     () => [
@@ -114,7 +116,7 @@ export function useCompanyColumns({
         },
         enableSorting: true,
       },
-      {
+      ...(!isGuestView ? [{
         id: "tile",
         accessorKey: "title",
         header: "Title",
@@ -124,7 +126,7 @@ export function useCompanyColumns({
             "whitespace-normal min-w-50 max-w-[180px] sm:max-w-none",
         },
         enableSorting: true,
-      },
+      } as ColumnDef<Company, unknown>] : []),
       /*{
         id: "description",
         accessorKey: "description",
@@ -147,16 +149,16 @@ export function useCompanyColumns({
         },
         enableSorting: true,
       },*/
-      {
+      ...(!isGuestView ? [{
         id: "category",
         accessorKey: "relationship_category",
         header: "Category",
-        cell: ({ row }) => {
+        cell: ({ row }: { row: { original: Company } }) => {
           const category = row.original.relationship_category;
           return <CategoryBadge category={category || ""} />;
         },
         enableSorting: true,
-      },
+      } as ColumnDef<Company, unknown>] : []),
       /*{
         id: "why",
         header: "Why",
@@ -172,10 +174,10 @@ export function useCompanyColumns({
         enableSorting: false,
         enableHiding: false,
       },*/
-      {
+      ...(!isGuestView ? [{
         id: "actions",
         header: "Actions",
-        cell: ({ row }) => (
+        cell: ({ row }: { row: { original: Company } }) => (
           <Button
             variant="outline"
             size="sm"
@@ -187,8 +189,8 @@ export function useCompanyColumns({
         ),
         enableSorting: false,
         enableHiding: false,
-      }
+      } as ColumnDef<Company, unknown>] : [])
     ],
-    [selected, allSelected, onToggleCompany, onToggleAll, onEditWhy, onDelete],
+    [selected, allSelected, onToggleCompany, onToggleAll, onEditWhy, onDelete, isGuestView],
   );
 }

@@ -73,6 +73,7 @@ export function CompanySelectionStep({
     onEditWhy,
     onCloseWhy: () => onEditWhy(null as any, null as any),
     onDelete,
+    isGuestView: !!token,
   });
 
   const groupedCompanies = useMemo(() => {

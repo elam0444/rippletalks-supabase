@@ -25,19 +25,13 @@ import { saveGuests } from "@/lib/actions/save-guests";
 interface Guest {
   first: string;
   last: string;
-  title: string;
-  company: string;
   linkedin: string;
-  email: string;
 }
 
 const emptyGuest = (): Guest => ({
   first: "",
   last: "",
-  title: "",
-  company: "",
   linkedin: "",
-  email: "",
 });
 
 interface GuestListStepProps {
@@ -168,10 +162,7 @@ export function GuestListStep({
                     [
                       ["first", "First name"],
                       ["last", "Last name"],
-                      ["title", "Title"],
-                      ["company", "Company"],
                       ["linkedin", "LinkedIn URL"],
-                      ["email", "Email address"],
                     ] as [keyof Guest, string][]
                   ).map(([field, placeholder]) => (
                     <Input

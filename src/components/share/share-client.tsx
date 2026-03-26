@@ -334,7 +334,7 @@ export function ShareClient({
               setActiveCompany({ company, anchor })
             }
             onCloseWhy={() => setActiveCompany(null)}
-            activeCompanyId={activeCompany?.company.id ?? null}
+            activeCompanyId={activeCompany?.company?.id ?? null}
             onDelete={setCompanyToDelete}
             onViewModeChange={setViewMode}
             onAddClick={() => setAddCompanyOpen(true)}
