@@ -31,12 +31,15 @@ export function TermsStep({ onBack, onNext }: TermsStepProps) {
     >
       <Card>
         <CardHeader>
+          {/* <CardTitle className='text-xl sm:text-2xl font-semibold text-gray-900'>
+            Step 4: Accept the terms
+          </CardTitle> */}
           <CardTitle className='text-xl sm:text-2xl font-semibold text-gray-900'>
-            Step 4: Terms &amp; Agreement
+            Step 3: Accept the terms
           </CardTitle>
           <CardDescription className='text-base text-gray-900'>
-            Please review and agree to the Ripple Talks terms before confirming
-            your fireside chat.
+            Review and accept the Ripple Talks terms to confirm your fireside
+            chat.
           </CardDescription>
         </CardHeader>
 
@@ -99,8 +102,7 @@ export function TermsStep({ onBack, onNext }: TermsStepProps) {
               )}
             </div>
             <span className='text-sm text-gray-700'>
-              I agree to Ripple Talks terms and to posting a highlight video
-              championing me as a thought leader.
+              I agree to Ripple Talks terms.
             </span>
           </button>
 

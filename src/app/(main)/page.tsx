@@ -33,7 +33,7 @@ export default async function Home() {
 
         {/* Credibility Video */}
         <video
-          src="https://jgqftfaxxfumnxajjukg.supabase.co/storage/v1/object/public/videos/Ripple%20Talks%20Credibility%20Video%20(home%20page%20main%20video)%20-%20March%202026%20version.mov"
+          src="https://jgqftfaxxfumnxajjukg.supabase.co/storage/v1/object/public/videos/Ripple%20Talks%20Credibility%20Video%20(home%20page%20main%20video)%20-%20March%202026%20version.mp4"
           controls
           className="w-full max-w-2xl rounded-lg shadow-lg"
         />

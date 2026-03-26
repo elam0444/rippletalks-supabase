@@ -17,23 +17,28 @@ export function ContactWelcomeCard({
           <User className='h-6 w-6 text-gray-400' />
         </div>
         <h2 className='text-xl sm:text-2xl font-semibold text-gray-900'>
-          Hi {contact.first_name}, Welcome to our Ripple Talks App!
+          Hi {contact.first_name}, welcome to Ripple’s{" "}
+          {contact.panelist_type || "Guest"} inner circle.
         </h2>
       </div>
 
-      <p className='text-base text-gray-900'>
+      {/* <p className='text-base text-gray-900'>
         We’re excited to host you as our {contact.panelist_type || "Guest"} on
         our upcoming fireside chat.
+      </p> */}
+
+      <p className='text-base text-gray-900'>
+        We’re happy to make introductions to fellow{" "}
+        {contact.panelist_type || "Guest"} at your request.
       </p>
 
       <p>
-        In order to make our fireside chats as productive and strategic to our{" "}
-        {contact.panelist_type} we are reserving 10 spots to invite CEOs of
-        companies that could prospectively be customers of{" "}
+        To help you maximize your fireside chat, we’ve reserved 10 VIP seats for
+        CEOs you’d want in the room — including prospective customers for{" "}
         {company?.name?.replace(/\.$/, "") || "your company"}.
       </p>
 
-      <p>Feel free to edit or add any company to the list.</p>
+      <p>Please review the steps below.</p>
     </div>
   );
 }
