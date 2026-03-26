@@ -76,15 +76,21 @@ export function GuestListStep({
   };
 
   const downloadTemplate = () => {
-    const csv = "First Name,Last Name,LinkedIn URL\nJane,Smith,https://linkedin.com/in/janesmith\nJohn,Doe,https://linkedin.com/in/johndoe";
+    const csv =
+      "First Name,Last Name,LinkedIn URL\nJane,Smith,https://linkedin.com/in/janesmith\nJohn,Doe,https://linkedin.com/in/johndoe";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     const safeName = contactName
-      ? contactName.trim().replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "")
+      ? contactName
+          .trim()
+          .replace(/\s+/g, "_")
+          .replace(/[^a-zA-Z0-9_]/g, "")
       : null;
-    a.download = safeName ? `${safeName}_guest_list.csv` : "guest-list-template.csv";
+    a.download = safeName
+      ? `${safeName}_guest_list.csv`
+      : "guest-list-template.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -100,7 +106,9 @@ export function GuestListStep({
       fd.append("file", file);
       fd.append("token", token);
       fd.append("clientCompanyId", clientCompanyId);
-      fetch("/api/share/upload-guest-file", { method: "POST", body: fd }).catch(() => {});
+      fetch("/api/share/upload-guest-file", { method: "POST", body: fd }).catch(
+        () => {},
+      );
     }
 
     const reader = new FileReader();
@@ -111,7 +119,9 @@ export function GuestListStep({
         const dataLines = lines.slice(1); // skip header
         const parsed: Guest[] = dataLines
           .map((line) => {
-            const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+            const cols = line
+              .split(",")
+              .map((c) => c.trim().replace(/^"|"$/g, ""));
             return {
               first: cols[0] ?? "",
               last: cols[1] ?? "",
@@ -122,13 +132,17 @@ export function GuestListStep({
           .slice(0, 10);
 
         if (parsed.length === 0) {
-          setUploadError("No valid rows found. Make sure your file matches the template.");
+          setUploadError(
+            "No valid rows found. Make sure your file matches the template.",
+          );
           return;
         }
         setGuests(parsed);
         setMode("manual");
       } catch {
-        setUploadError("Could not parse the file. Please use the CSV template.");
+        setUploadError(
+          "Could not parse the file. Please use the CSV template.",
+        );
       }
     };
     reader.readAsText(file);
@@ -150,7 +164,7 @@ export function GuestListStep({
 
   return (
     <motion.div
-      key="step3"
+      key='step3'
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
@@ -158,53 +172,54 @@ export function GuestListStep({
     >
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-900">
-            Step 3: Add your guest list
+          {/* <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-900">
+            Step 3: Add your guests
+          </CardTitle> */}
+          <CardTitle className='text-xl sm:text-2xl font-semibold text-gray-900'>
+            Step 2: Add your guests
           </CardTitle>
-          <CardDescription className="text-base text-gray-900">
-            Add up to 10 guests you would like to invite to attend this
-            invite-only fireside chat. Include their first name, last name,
-            and LinkedIn URL.
+          <CardDescription className='text-base text-gray-900'>
+            Invite up to 10 additional guests.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className='space-y-6'>
           {/* Mode toggle */}
-          <div className="flex flex-wrap gap-2">
+          <div className='flex flex-wrap gap-2'>
             <Button
               variant={mode === "manual" ? "default" : "outline"}
-              size="sm"
+              size='sm'
               onClick={() => setMode("manual")}
             >
               Enter manually
             </Button>
             <Button
               variant={mode === "sheet" ? "default" : "outline"}
-              size="sm"
+              size='sm'
               onClick={() => setMode("sheet")}
             >
-              <Link className="h-4 w-4 mr-2" />
+              <Link className='h-4 w-4 mr-2' />
               Google Sheet URL
             </Button>
             <Button
               variant={mode === "upload" ? "default" : "outline"}
-              size="sm"
+              size='sm'
               onClick={() => setMode("upload")}
             >
-              <Upload className="h-4 w-4 mr-2" />
+              <Upload className='h-4 w-4 mr-2' />
               Upload CSV
             </Button>
           </div>
 
           {/* Google Sheet mode */}
           {mode === "sheet" && (
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">
+            <div className='space-y-2'>
+              <p className='text-sm text-gray-500'>
                 Paste the public URL to your Google Sheet. Make sure it has
                 columns: First Name, Last Name, LinkedIn URL.
               </p>
               <Input
-                placeholder="https://docs.google.com/spreadsheets/d/..."
+                placeholder='https://docs.google.com/spreadsheets/d/...'
                 value={sheetUrl}
                 onChange={(e) => setSheetUrl(e.target.value)}
               />
@@ -213,64 +228,65 @@ export function GuestListStep({
 
           {/* Upload CSV mode */}
           {mode === "upload" && (
-            <div className="space-y-4">
-              <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center space-y-3">
-                <Upload className="mx-auto h-8 w-8 text-gray-400" />
+            <div className='space-y-4'>
+              <div className='rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center space-y-3'>
+                <Upload className='mx-auto h-8 w-8 text-gray-400' />
                 <div>
-                  <p className="text-sm font-medium text-gray-700">
+                  <p className='text-sm font-medium text-gray-700'>
                     Upload a CSV file with your guest list
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Columns: First Name, Last Name, LinkedIn URL — up to 10 guests
+                  <p className='text-xs text-gray-500 mt-1'>
+                    Columns: First Name, Last Name, LinkedIn URL — up to 10
+                    guests
                   </p>
                 </div>
-                <div className="flex flex-wrap justify-center gap-3">
+                <div className='flex flex-wrap justify-center gap-3'>
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant='outline'
+                    size='sm'
                     onClick={downloadTemplate}
                   >
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className='h-4 w-4 mr-2' />
                     Download template
                   </Button>
                   <Button
-                    size="sm"
+                    size='sm'
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="h-4 w-4 mr-2" />
+                    <Upload className='h-4 w-4 mr-2' />
                     Choose file
                   </Button>
                 </div>
                 <input
                   ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.xls,.xlsx"
-                  className="hidden"
+                  type='file'
+                  accept='.csv,.xls,.xlsx'
+                  className='hidden'
                   onChange={handleFileUpload}
                 />
               </div>
               {uploadError && (
-                <p className="text-sm text-red-600">{uploadError}</p>
+                <p className='text-sm text-red-600'>{uploadError}</p>
               )}
             </div>
           )}
 
           {/* Manual entry mode */}
           {mode === "manual" && (
-            <div className="space-y-3">
+            <div className='space-y-3'>
               {guests.map((guest, i) => (
                 <div
                   key={i}
-                  className="relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 p-4 pt-8 border rounded-lg bg-gray-50"
+                  className='relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 p-4 pt-8 border rounded-lg bg-gray-50'
                 >
-                  <span className="absolute top-3 left-4 text-xs font-medium text-gray-400">
+                  <span className='absolute top-3 left-4 text-xs font-medium text-gray-400'>
                     Guest {i + 1}
                   </span>
                   {guests.length > 1 && (
                     <button
-                      type="button"
+                      type='button'
                       onClick={() => removeGuest(i)}
-                      className="absolute top-3 right-3 text-gray-300 hover:text-gray-500 transition-colors"
+                      className='absolute top-3 right-3 text-gray-300 hover:text-gray-500 transition-colors'
                     >
                       <Trash2 size={14} />
                     </button>
@@ -287,34 +303,40 @@ export function GuestListStep({
                       placeholder={placeholder}
                       value={guest[field]}
                       onChange={(e) => updateGuest(i, field, e.target.value)}
-                      className="bg-white text-sm h-9"
+                      className='bg-white text-sm h-9'
                     />
                   ))}
                 </div>
               ))}
 
               {guests.length < 10 && (
-                <Button variant="outline" size="sm" onClick={addGuest}>
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button variant='outline' size='sm' onClick={addGuest}>
+                  <Plus className='h-4 w-4 mr-2' />
                   Add guest ({guests.length}/10)
                 </Button>
               )}
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className='flex items-center justify-end gap-3 pt-2'>
             {saved && (
-              <span className="text-sm text-green-600 font-medium">Saved!</span>
+              <span className='text-sm text-green-600 font-medium'>Saved!</span>
             )}
             <Button
               onClick={handleSave}
-              disabled={saving || !addedByProfileId || !guests.every((g) => g.first.trim() && g.last.trim() && g.linkedin.trim())}
-              className="bg-green-600 hover:bg-green-700"
+              disabled={
+                saving ||
+                !addedByProfileId ||
+                !guests.every(
+                  (g) => g.first.trim() && g.last.trim() && g.linkedin.trim(),
+                )
+              }
+              className='bg-green-600 hover:bg-green-700'
             >
               {saving ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className='h-4 w-4 mr-2 animate-spin' />
               ) : (
-                <CheckCircle2 className="h-4 w-4 mr-2" />
+                <CheckCircle2 className='h-4 w-4 mr-2' />
               )}
               {saving ? "Saving…" : "Save Changes"}
             </Button>

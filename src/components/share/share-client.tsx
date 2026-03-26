@@ -42,7 +42,7 @@ export function ShareClient({
   const step2Ref = useRef<HTMLDivElement | null>(null);
 
   const [timeZone] = useState<string>(
-    () => Intl.DateTimeFormat().resolvedOptions().timeZone
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
   );
 
   // --- Step 1: Contact Dates ---
@@ -309,17 +309,17 @@ export function ShareClient({
             />
           )}
           <video
-            src='/Ripple Talks Credibility Video (home page main video) - March 2026 version.mov'
+            src='https://jgqftfaxxfumnxajjukg.supabase.co/storage/v1/object/public/videos/Ripple%20Talks%20Credibility%20Video%20(home%20page%20main%20video)%20-%20March%202026%20version.mp4'
             controls
             className='w-full rounded-lg'
           />
-          <DateSelectionStep
+          {/* <DateSelectionStep
             dates={dates}
             onToggleDate={toggleDate}
             onNext={() => setStep(2)}
             panelistType={sharedContact?.panelist_type || null}
             timeZone={timeZone}
-          />
+          /> */}
         </>
       )}
 
