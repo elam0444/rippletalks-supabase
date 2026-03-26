@@ -29,7 +29,7 @@ export function ContactWelcomeCard({
 
       <p className='text-base text-gray-900'>
         We’re happy to make introductions to fellow{" "}
-        {contact.panelist_type || "Guest"} at your request.
+        {contact.panelist_type || "Guest"}s at your request.
       </p>
 
       <p>
