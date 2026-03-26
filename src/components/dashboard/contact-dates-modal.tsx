@@ -22,6 +22,7 @@ interface ContactDatesModalProps {
   companyId: string;
 }
 
+// 8:00 AM to 6:00 PM PST (slots from index 16 to 35, i.e. 8:00–17:30)
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   const totalMinutes = i * 30;
   const h24 = Math.floor(totalMinutes / 60);
@@ -29,6 +30,9 @@ const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   const period = h24 < 12 ? "AM" : "PM";
   const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
   return `${h12.toString().padStart(2, "0")}:${m} ${period}`;
+}).filter((_, i) => {
+  const h24 = Math.floor((i * 30) / 60);
+  return h24 >= 8 && h24 < 18;
 });
 
 // Parse "hh:mm AM/PM" into { h24, minutes }

@@ -5,6 +5,7 @@ interface DateSelectionCardProps {
   date: string;
   isSelected: boolean;
   onToggle: () => void;
+  timeZone?: string;
 }
 
 /**
@@ -14,6 +15,7 @@ export function DateSelectionCard({
   date,
   isSelected,
   onToggle,
+  timeZone,
 }: DateSelectionCardProps) {
   return (
     <motion.label
@@ -22,7 +24,7 @@ export function DateSelectionCard({
       }`}
       whileHover={{ scale: 1.02 }}
     >
-      <span>{formatAvailableDate(date)}</span>
+      <span>{formatAvailableDate(date, timeZone)}</span>
       <input
         type="checkbox"
         checked={isSelected}

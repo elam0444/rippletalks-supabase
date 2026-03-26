@@ -3,16 +3,18 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatAvailableDate } from "@/lib/utils/text-utils";
 
 interface ConfirmationStepProps {
   onBack: () => void;
   selectedDate: string | null;
+  timeZone?: string;
 }
 
 /**
  * Step 3: Confirmation screen
  */
-export function ConfirmationStep({ onBack, selectedDate }: ConfirmationStepProps) {
+export function ConfirmationStep({ onBack, selectedDate, timeZone }: ConfirmationStepProps) {
   return (
     <motion.div
       key='step3'
@@ -33,7 +35,7 @@ export function ConfirmationStep({ onBack, selectedDate }: ConfirmationStepProps
         </h2>
         {selectedDate && (
           <p className='text-gray-600'>
-            See you on {new Date(selectedDate).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+            See you on {formatAvailableDate(selectedDate, timeZone)}
           </p>
         )}
       </div>

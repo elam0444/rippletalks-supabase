@@ -11,6 +11,7 @@ interface DateSelectionStepProps {
   onToggleDate: (date: string) => void;
   onNext: () => void;
   panelistType: string | null;
+  timeZone?: string;
 }
 
 /**
@@ -21,6 +22,7 @@ export function DateSelectionStep({
   onToggleDate,
   onNext,
   panelistType,
+  timeZone,
 }: DateSelectionStepProps) {
   const hasSelectedDates = dates.some((d) => d.is_selected);
 
@@ -44,6 +46,7 @@ export function DateSelectionStep({
               date={d.available_date}
               isSelected={d.is_selected}
               onToggle={() => onToggleDate(d.available_date)}
+              timeZone={timeZone}
             />
           ))}
         </div>

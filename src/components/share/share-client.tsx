@@ -41,6 +41,10 @@ export function ShareClient({
   const [alwaysVisible, setAlwaysVisible] = useState(true);
   const step2Ref = useRef<HTMLDivElement | null>(null);
 
+  const [timeZone] = useState<string>(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
+
   // --- Step 1: Contact Dates ---
   const [dates, setDates] = useState(initialDates);
 
@@ -314,6 +318,7 @@ export function ShareClient({
             onToggleDate={toggleDate}
             onNext={() => setStep(2)}
             panelistType={sharedContact?.panelist_type || null}
+            timeZone={timeZone}
           />
         </>
       )}
@@ -369,6 +374,7 @@ export function ShareClient({
             selectedDate={
               dates.find((d) => d.is_selected)?.available_date ?? null
             }
+            timeZone={timeZone}
           />
         )}
       </AnimatePresence>
