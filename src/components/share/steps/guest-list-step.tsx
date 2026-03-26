@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Plus,
   Trash2,
   Link,
   CheckCircle2,
-  ArrowLeft,
   Loader2,
+  Upload,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,10 +48,13 @@ export function GuestListStep({
   addedByProfileId,
   clientCompanyId,
 }: GuestListStepProps) {
-  const [mode, setMode] = useState<"manual" | "sheet">("manual");
+  const [mode, setMode] = useState<"manual" | "sheet" | "upload">("manual");
   const [sheetUrl, setSheetUrl] = useState("");
   const [guests, setGuests] = useState<Guest[]>([emptyGuest()]);
   const [saving, setSaving] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addGuest = () => {
     if (guests.length >= 10) return;
@@ -67,7 +71,53 @@ export function GuestListStep({
     );
   };
 
-  const [saved, setSaved] = useState(false);
+  const downloadTemplate = () => {
+    const csv = "First Name,Last Name,LinkedIn URL\nJane,Smith,https://linkedin.com/in/janesmith\nJohn,Doe,https://linkedin.com/in/johndoe";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "guest-list-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError("");
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target?.result as string;
+        const lines = text.split(/\r?\n/).filter((l) => l.trim());
+        const dataLines = lines.slice(1); // skip header
+        const parsed: Guest[] = dataLines
+          .map((line) => {
+            const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+            return {
+              first: cols[0] ?? "",
+              last: cols[1] ?? "",
+              linkedin: cols[2] ?? "",
+            };
+          })
+          .filter((g) => g.first || g.last || g.linkedin)
+          .slice(0, 10);
+
+        if (parsed.length === 0) {
+          setUploadError("No valid rows found. Make sure your file matches the template.");
+          return;
+        }
+        setGuests(parsed);
+        setMode("manual");
+      } catch {
+        setUploadError("Could not parse the file. Please use the CSV template.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   const handleSave = async () => {
     if (!addedByProfileId) return;
@@ -99,13 +149,13 @@ export function GuestListStep({
           <CardDescription className="text-base text-gray-900">
             Add up to 10 guests you would like to invite to attend this
             invite-only fireside chat. Include their first name, last name,
-            title, company, LinkedIn URL, and email address.
+            and LinkedIn URL.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
           {/* Mode toggle */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant={mode === "manual" ? "default" : "outline"}
               size="sm"
@@ -121,6 +171,14 @@ export function GuestListStep({
               <Link className="h-4 w-4 mr-2" />
               Google Sheet URL
             </Button>
+            <Button
+              variant={mode === "upload" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("upload")}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload CSV
+            </Button>
           </div>
 
           {/* Google Sheet mode */}
@@ -128,13 +186,57 @@ export function GuestListStep({
             <div className="space-y-2">
               <p className="text-sm text-gray-500">
                 Paste the public URL to your Google Sheet. Make sure it has
-                columns: First, Last, Title, Company, LinkedIn, Email.
+                columns: First Name, Last Name, LinkedIn URL.
               </p>
               <Input
                 placeholder="https://docs.google.com/spreadsheets/d/..."
                 value={sheetUrl}
                 onChange={(e) => setSheetUrl(e.target.value)}
               />
+            </div>
+          )}
+
+          {/* Upload CSV mode */}
+          {mode === "upload" && (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center space-y-3">
+                <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    Upload a CSV file with your guest list
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Columns: First Name, Last Name, LinkedIn URL — up to 10 guests
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={downloadTemplate}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download template
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose file
+                  </Button>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xls,.xlsx"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </div>
+              {uploadError && (
+                <p className="text-sm text-red-600">{uploadError}</p>
+              )}
             </div>
           )}
 
