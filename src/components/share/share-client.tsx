@@ -41,6 +41,10 @@ export function ShareClient({
   const [alwaysVisible, setAlwaysVisible] = useState(true);
   const step2Ref = useRef<HTMLDivElement | null>(null);
 
+  const [timeZone] = useState<string>(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
+
   // --- Step 1: Contact Dates ---
   const [dates, setDates] = useState(initialDates);
 
@@ -294,7 +298,7 @@ export function ShareClient({
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className='max-w-6xl mx-auto px-4 py-4 sm:p-6 space-y-6'>
       {/* --- Step 1: Date Selection --- */}
       {(step === 1 || (alwaysVisible && step < 5)) && (
         <>
@@ -304,11 +308,17 @@ export function ShareClient({
               company={sharedCompany}
             />
           )}
+          <video
+            src='/Ripple Talks Credibility Video (home page main video) - March 2026 version.mov'
+            controls
+            className='w-full rounded-lg'
+          />
           <DateSelectionStep
             dates={dates}
             onToggleDate={toggleDate}
             onNext={() => setStep(2)}
             panelistType={sharedContact?.panelist_type || null}
+            timeZone={timeZone}
           />
         </>
       )}
@@ -317,7 +327,7 @@ export function ShareClient({
       <div ref={step2Ref}>
         {(step === 2 || (alwaysVisible && step < 5)) && (
           <CompanySelectionStep
-            key="company-selection"
+            key='company-selection'
             companies={companiesList}
             selected={selected}
             viewMode={viewMode}
@@ -328,6 +338,8 @@ export function ShareClient({
             onEditWhy={(company, anchor) =>
               setActiveCompany({ company, anchor })
             }
+            onCloseWhy={() => setActiveCompany(null)}
+            activeCompanyId={activeCompany?.company?.id ?? null}
             onDelete={setCompanyToDelete}
             onViewModeChange={setViewMode}
             onAddClick={() => setAddCompanyOpen(true)}
@@ -344,7 +356,9 @@ export function ShareClient({
           onBack={() => setStep(2)}
           onNext={() => setStep(4)}
           addedByProfileId={sharedContact?.id}
-          clientCompanyId={sharedCompany?.id}
+          clientCompanyId={clientCompanyId}
+          token={token}
+          contactName={sharedContact?.name}
         />
       )}
 
@@ -353,15 +367,16 @@ export function ShareClient({
         <TermsStep onBack={() => setStep(3)} onNext={() => setStep(5)} />
       )}
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode='wait'>
         {/* --- Step 5: Confirmation --- */}
         {step === 5 && (
           <ConfirmationStep
-            key="confirmation"
+            key='confirmation'
             onBack={() => setStep(4)}
             selectedDate={
               dates.find((d) => d.is_selected)?.available_date ?? null
             }
+            timeZone={timeZone}
           />
         )}
       </AnimatePresence>

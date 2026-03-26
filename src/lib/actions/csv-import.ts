@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { z } from "zod"
 
 // Types for batch import
@@ -33,7 +34,8 @@ export interface BatchImportResult {
  */
 export async function importTargetCompaniesFromCSV(
   clientCompanyId: string,
-  rows: { rowNumber: number; data: TargetCompanyImportRow }[]
+  rows: { rowNumber: number; data: TargetCompanyImportRow }[],
+  fileName?: string
 ): Promise<BatchImportResult> {
   const supabase = await createClient()
 
@@ -207,6 +209,7 @@ export async function importTargetCompaniesFromCSV(
             why: why || null,
             note: null,
             added_by_profile_id: profile.id,
+            source: "csv",
           })
           .eq("id", existingRecord.id)
           .select("id")
@@ -226,6 +229,7 @@ export async function importTargetCompaniesFromCSV(
             why: why || null,
             note: null,
             added_by_profile_id: profile.id,
+            source: "csv",
           })
           .select("id")
           .single()
@@ -262,6 +266,19 @@ export async function importTargetCompaniesFromCSV(
       })
       failureCount++
     }
+  }
+
+  // Log the CSV upload event for analytics
+  if (successCount > 0) {
+    const adminClient = createAdminClient()
+    await adminClient.from("csv_uploads").insert({
+      profile_id: profile.id,
+      client_company_id: clientCompanyId,
+      file_name: fileName ?? null,
+      total_rows: rows.length,
+      success_count: successCount,
+      failure_count: failureCount,
+    })
   }
 
   // Revalidate the company page to show new targets

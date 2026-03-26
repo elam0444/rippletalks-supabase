@@ -181,6 +181,38 @@ export async function removeTargetCompany(
   return { success: true }
 }
 
+// Batch remove target companies (soft delete)
+export async function batchRemoveTargetCompanies(
+  targetIds: string[],
+  clientCompanyId: string
+): Promise<ActionResult> {
+  if (targetIds.length === 0) {
+    return { success: false, error: "No companies selected" }
+  }
+
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: "Unauthorized" }
+  }
+
+  const { error } = await supabase
+    .from("target_companies")
+    .update({ deleted_at: new Date().toISOString() })
+    .in("id", targetIds)
+    .is("deleted_at", null)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath(`/dashboard/companies/${clientCompanyId}`)
+  return { success: true }
+}
+
 // Get relationship categories for dropdown
 export async function getRelationshipCategories() {
   const supabase = await createClient()

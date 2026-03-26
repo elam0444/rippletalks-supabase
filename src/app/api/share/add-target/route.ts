@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
           deleted_at: null,
           selected: true,
           relationship_category: defaultCategoryId,
+          source: "guest",
         })
         .eq("id", existingDeleted.id);
 
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
           relationship_category: defaultCategoryId,
           selected: true,
           added_by_profile_id: shareLink.profile_id,
+          source: "guest",
         });
 
       if (error) {

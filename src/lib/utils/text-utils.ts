@@ -56,13 +56,15 @@ export function formatDate(
   }
 }
 
-export function formatAvailableDate(dateStr: string): string {
+export function formatAvailableDate(dateStr: string, timeZone?: string): string {
   const date = new Date(dateStr);
+  const opts: Intl.DateTimeFormatOptions = timeZone ? { timeZone } : {};
 
-  const month = date.toLocaleString("en-US", { month: "long" });
-  const day = date.getDate();
-  const year = date.getFullYear();
+  const month = date.toLocaleString("en-US", { ...opts, month: "long" });
+  const day = parseInt(date.toLocaleString("en-US", { ...opts, day: "numeric" }), 10);
+  const year = date.toLocaleString("en-US", { ...opts, year: "numeric" });
   const time = date.toLocaleString("en-US", {
+    ...opts,
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
@@ -74,5 +76,9 @@ export function formatAvailableDate(dateStr: string): string {
     : day % 10 === 3 && day !== 13 ? "rd"
     : "th";
 
-  return `${month} ${day}${suffix}, ${year} ${time}`;
+  const tzLabel = timeZone
+    ? " " + date.toLocaleString("en-US", { ...opts, timeZoneName: "short" }).split(" ").at(-1)
+    : "";
+
+  return `${month} ${day}${suffix}, ${year} ${time}${tzLabel}`;
 }

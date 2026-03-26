@@ -1,4 +1,5 @@
 import { z } from "zod";
+import * as XLSX from "xlsx";
 
 // Types for CSV parsing results
 export interface CSVRow {
@@ -195,12 +196,36 @@ export function validateTargetCompanyCSV(csvText: string): CSVParseResult<Target
 }
 
 /**
- * Read CSV file and return text content
+ * Read a CSV, XLS, or XLSX file and return CSV text content
  */
 export async function readCSVFile(file: File): Promise<string> {
+  const isExcel =
+    file.type === 'application/vnd.ms-excel' ||
+    file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    file.name.endsWith('.xls') ||
+    file.name.endsWith('.xlsx');
+
+  if (isExcel) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          if (!data) { reject(new Error('Failed to read file')); return; }
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          resolve(XLSX.utils.sheet_to_csv(sheet));
+        } catch (err) {
+          reject(new Error('Failed to parse Excel file'));
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
     reader.onload = (e) => {
       const text = e.target?.result;
       if (typeof text === 'string') {
@@ -209,11 +234,7 @@ export async function readCSVFile(file: File): Promise<string> {
         reject(new Error('Failed to read file as text'));
       }
     };
-
-    reader.onerror = () => {
-      reject(new Error('Failed to read file'));
-    };
-
+    reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsText(file);
   });
 }

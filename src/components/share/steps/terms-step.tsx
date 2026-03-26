@@ -31,7 +31,7 @@ export function TermsStep({ onBack, onNext }: TermsStepProps) {
     >
       <Card>
         <CardHeader>
-          <CardTitle className='text-2xl font-semibold text-gray-900'>
+          <CardTitle className='text-xl sm:text-2xl font-semibold text-gray-900'>
             Step 4: Terms &amp; Agreement
           </CardTitle>
           <CardDescription className='text-base text-gray-900'>
