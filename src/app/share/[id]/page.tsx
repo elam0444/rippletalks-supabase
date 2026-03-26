@@ -56,6 +56,11 @@ export default async function SharePage({
         return <div>This share link has expired.</div>;
       }
 
+      Promise.all([
+        adminClient.from("share_link_logs").insert({ share_link_id: shareLink.id, event: "open" }),
+        adminClient.from("share_links").update({ uses: (shareLink.uses ?? 0) + 1 }).eq("id", shareLink.id),
+      ]);
+
       const contactId = shareLink.permissions?.contact_id;
 
       if (contactId) {

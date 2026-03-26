@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   Card,
   CardContent,
@@ -41,6 +41,7 @@ interface CSVUploadCardProps {
 export function CSVUploadCard({ companies }: CSVUploadCardProps) {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
   const [parseResult, setParseResult] = useState<CSVParseResult<TargetCompanyCSVRow> | null>(null)
+  const uploadFileNameRef = useRef<string>('')
   const [importResult, setImportResult] = useState<BatchImportResult | null>(null)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [showResultsModal, setShowResultsModal] = useState(false)
@@ -59,7 +60,7 @@ export function CSVUploadCard({ companies }: CSVUploadCardProps) {
       const csvText = await readCSVFile(file)
       const result = validateTargetCompanyCSV(csvText)
 
-      // Show preview modal
+      uploadFileNameRef.current = file.name
       setParseResult(result)
       setShowPreviewModal(true)
 
@@ -82,7 +83,7 @@ export function CSVUploadCard({ companies }: CSVUploadCardProps) {
       }))
 
       // Import to database
-      const result = await importTargetCompaniesFromCSV(selectedCompanyId, rowsToImport)
+      const result = await importTargetCompaniesFromCSV(selectedCompanyId, rowsToImport, uploadFileNameRef.current)
 
       // Close preview modal, show results modal
       setShowPreviewModal(false)

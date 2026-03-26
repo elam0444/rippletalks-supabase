@@ -356,7 +356,9 @@ export function ShareClient({
           onBack={() => setStep(2)}
           onNext={() => setStep(4)}
           addedByProfileId={sharedContact?.id}
-          clientCompanyId={sharedCompany?.id}
+          clientCompanyId={clientCompanyId}
+          token={token}
+          contactName={sharedContact?.name}
         />
       )}
 

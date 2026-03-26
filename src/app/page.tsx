@@ -19,6 +19,7 @@ export default async function Home() {
             alt='RippleTalk Logo'
             width={150}
             height={150}
+            loading="eager"
           />
           <h1 className='text-4xl font-bold tracking-tight'>
             Welcome to Ripple Talks

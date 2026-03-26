@@ -40,6 +40,8 @@ interface GuestListStepProps {
   onNext: () => void;
   addedByProfileId?: string;
   clientCompanyId?: string;
+  token?: string;
+  contactName?: string | null;
 }
 
 export function GuestListStep({
@@ -47,6 +49,8 @@ export function GuestListStep({
   onNext,
   addedByProfileId,
   clientCompanyId,
+  token,
+  contactName,
 }: GuestListStepProps) {
   const [mode, setMode] = useState<"manual" | "sheet" | "upload">("manual");
   const [sheetUrl, setSheetUrl] = useState("");
@@ -77,7 +81,10 @@ export function GuestListStep({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "guest-list-template.csv";
+    const safeName = contactName
+      ? contactName.trim().replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "")
+      : null;
+    a.download = safeName ? `${safeName}_guest_list.csv` : "guest-list-template.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -86,6 +93,15 @@ export function GuestListStep({
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadError("");
+    e.target.value = "";
+
+    if (token && clientCompanyId) {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("token", token);
+      fd.append("clientCompanyId", clientCompanyId);
+      fetch("/api/share/upload-guest-file", { method: "POST", body: fd }).catch(() => {});
+    }
 
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -116,7 +132,6 @@ export function GuestListStep({
       }
     };
     reader.readAsText(file);
-    e.target.value = "";
   };
 
   const handleSave = async () => {
@@ -293,7 +308,7 @@ export function GuestListStep({
             )}
             <Button
               onClick={handleSave}
-              disabled={saving || !addedByProfileId}
+              disabled={saving || !addedByProfileId || !guests.every((g) => g.first.trim() && g.last.trim() && g.linkedin.trim())}
               className="bg-green-600 hover:bg-green-700"
             >
               {saving ? (
