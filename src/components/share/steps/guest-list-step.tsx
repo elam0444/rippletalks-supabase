@@ -61,7 +61,7 @@ export function GuestListStep({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addGuest = () => {
-    if (guests.length >= 10) return;
+    if (guests.length >= 15) return;
     setGuests((prev) => [...prev, emptyGuest()]);
   };
 
@@ -179,7 +179,7 @@ export function GuestListStep({
             Step 2: Add your guests
           </CardTitle>
           <CardDescription className='text-base text-gray-900'>
-            Invite up to 10 additional guests.
+            Invite up to 15 additional guests.
           </CardDescription>
         </CardHeader>
 
@@ -193,14 +193,14 @@ export function GuestListStep({
             >
               Enter manually
             </Button>
-            <Button
+            {/* <Button
               variant={mode === "sheet" ? "default" : "outline"}
               size='sm'
               onClick={() => setMode("sheet")}
             >
               <Link className='h-4 w-4 mr-2' />
               Google Sheet URL
-            </Button>
+            </Button> */}
             <Button
               variant={mode === "upload" ? "default" : "outline"}
               size='sm'
@@ -212,7 +212,7 @@ export function GuestListStep({
           </div>
 
           {/* Google Sheet mode */}
-          {mode === "sheet" && (
+          {/* {mode === "sheet" && (
             <div className='space-y-2'>
               <p className='text-sm text-gray-500'>
                 Paste the public URL to your Google Sheet. Make sure it has
@@ -224,7 +224,7 @@ export function GuestListStep({
                 onChange={(e) => setSheetUrl(e.target.value)}
               />
             </div>
-          )}
+          )} */}
 
           {/* Upload CSV mode */}
           {mode === "upload" && (
@@ -236,7 +236,7 @@ export function GuestListStep({
                     Upload a CSV file with your guest list
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>
-                    Columns: First Name, Last Name, LinkedIn URL — up to 10
+                    Columns: First Name, Last Name, LinkedIn URL — up to 15
                     guests
                   </p>
                 </div>
@@ -312,7 +312,7 @@ export function GuestListStep({
               {guests.length < 10 && (
                 <Button variant='outline' size='sm' onClick={addGuest}>
                   <Plus className='h-4 w-4 mr-2' />
-                  Add guest ({guests.length}/10)
+                  Add guest ({guests.length}/15)
                 </Button>
               )}
             </div>
