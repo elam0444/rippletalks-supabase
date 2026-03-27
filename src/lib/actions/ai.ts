@@ -29,8 +29,17 @@ export async function fetchTargetCompaniesFromOpenAI(
 ): Promise<TargetCompany[]> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-  const prompt = `
-You are an expert researcher. Generate a JSON array of up to 30 companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
+  const prompt = `You are an expert researcher and you are helping me build a high-quality prospect list for a company. Generate a JSON array of up to 20 companies with the following requirements:
+
+1. Split the list between large and mid-sized companies (no household names). 
+2. The list should represent companies in different industries. 
+3. Avoid suggesting emerging startups (under $20M raised) unless explicitly asked.
+4. Do NOT include companies that operate in the same or adjacent categories as the Company. If there is any ambiguity, err on the side of exclusion.
+5. Look for their current customers when available, and include a mix of: 
+   - Likely existing customers (if relevant)
+   - High-quality expansion prospects
+
+Description:
 "${description}"
 
 Each company should include:
