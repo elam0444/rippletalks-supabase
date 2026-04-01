@@ -30,7 +30,7 @@ export async function fetchTargetCompaniesFromOpenAI(
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const prompt = `
-You are an expert researcher. Generate a JSON array of up to 30 companies that are related, complementary, or relevant to this company/description, and could be good for networking, partnerships, or business connections:
+DO NOT USE past memory, this is a new request. You are an expert researcher and you are helping me build a high-quality prospect list for a company. Generate a JSON array of up to 20 companies with the following requirements:
 "${description}"
 
 Each company should include:
@@ -39,7 +39,7 @@ Each company should include:
 - website (if available)
 - description
 - industry (must use exactly this key name) from the following options: ${availableIndustries.join(", ")}
-- why
+- why (this should be a brief explanation 1 line of why this company is relevant or important to connect with based on the description)
 - a contact object with "name" (first and last name only, no title), "title" (job title separately please try to find the CEO), and "email" fields for a person who could be useful for outreach
 - a relationship_category (must use exactly this key name) from the following options: Prospect
 
@@ -78,7 +78,7 @@ Example output format:
         "title": "General Partner",
         "email": "tom@brightventures.io"
       },
-      "relationship_category": "Investor"
+      "relationship_category": "Prospect"
     }
   ]
 }
