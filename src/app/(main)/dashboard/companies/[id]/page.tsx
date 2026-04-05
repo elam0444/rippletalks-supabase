@@ -217,6 +217,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
             <CompanyForm
               mode="edit"
               industries={industries}
+              relationshipCategories={categories}
               initialData={{
                 id: company.id,
                 name: company.name,
@@ -224,6 +225,9 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 website: company.website,
                 logo_url: company.logo_url,
                 description: company.description,
+                target_customer_profile: company.target_customer_profile,
+                preferred_relationship_categories:
+                  company.preferred_relationship_categories ?? [],
                 industry_id: company.industry_id,
               }}
               trigger={
