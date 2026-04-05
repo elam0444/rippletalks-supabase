@@ -11,6 +11,8 @@ const companySchema = z.object({
   website: z.url("Invalid URL").optional().nullable().or(z.literal("")),
   logo_url: z.url("Invalid URL").optional().nullable().or(z.literal("")),
   description: z.string().max(1000).optional().nullable(),
+  target_customer_profile: z.string().max(2000).optional().nullable(),
+  preferred_relationship_categories: z.array(z.string().uuid()).optional().nullable(),
   industry_id: z.string().uuid().optional().nullable(),
 })
 
@@ -31,15 +33,22 @@ export async function createCompany(formData: CompanyFormData): Promise<ActionRe
     return { success: false, error: "Unauthorized" }
   }
 
-  // Validate input
   const parsed = companySchema.safeParse(formData)
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const { name, legal_name, website, logo_url, description, industry_id } = parsed.data
+  const {
+    name,
+    legal_name,
+    website,
+    logo_url,
+    description,
+    target_customer_profile,
+    preferred_relationship_categories,
+    industry_id,
+  } = parsed.data
 
-  // Get or create profile
   const { data: profile } = await supabase
     .from("profiles")
     .select("id")
@@ -54,6 +63,8 @@ export async function createCompany(formData: CompanyFormData): Promise<ActionRe
       website: website || null,
       logo_url: logo_url || null,
       description: description || null,
+      target_customer_profile: target_customer_profile || null,
+      preferred_relationship_categories: preferred_relationship_categories ?? [],
       industry_id: industry_id || null,
       added_by_profile_id: profile?.id || null,
       slug: name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
@@ -84,13 +95,21 @@ export async function updateCompany(
     return { success: false, error: "Unauthorized" }
   }
 
-  // Validate input
   const parsed = companySchema.safeParse(formData)
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const { name, legal_name, website, logo_url, description, industry_id } = parsed.data
+  const {
+    name,
+    legal_name,
+    website,
+    logo_url,
+    description,
+    target_customer_profile,
+    preferred_relationship_categories,
+    industry_id,
+  } = parsed.data
 
   const { error } = await supabase
     .from("companies")
@@ -100,6 +119,8 @@ export async function updateCompany(
       website: website || null,
       logo_url: logo_url || null,
       description: description || null,
+      target_customer_profile: target_customer_profile || null,
+      preferred_relationship_categories: preferred_relationship_categories ?? [],
       industry_id: industry_id || null,
       slug: name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
     })
@@ -197,6 +218,8 @@ export async function getCompanyById(id: string) {
       website,
       logo_url,
       description,
+      target_customer_profile,
+      preferred_relationship_categories,
       industry_id,
       industries (
         id,
@@ -215,5 +238,37 @@ export async function getCompanyById(id: string) {
 }
 
 export async function revalidateCompanyPage(companyId: string) {
-  revalidatePath(`/dashboard/companies/${companyId}`);
+  revalidatePath(`/dashboard/companies/${companyId}`)
+}
+
+// Create a new relationship category and return it for immediate use in the form
+export async function createRelationshipCategory(
+  name: string
+): Promise<{ success: boolean; data?: { id: string; name: string }; error?: string }> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: "Unauthorized" }
+  }
+
+  const trimmed = name.trim()
+  if (!trimmed) {
+    return { success: false, error: "Category name is required" }
+  }
+
+  const { data, error } = await supabase
+    .from("relationship_categories")
+    .insert({ name: trimmed })
+    .select("id, name")
+    .single()
+
+  if (error) {
+    if (error.code === "23505") {
+      return { success: false, error: "This category already exists" }
+    }
+    return { success: false, error: error.message }
+  }
+
+  return { success: true, data }
 }
