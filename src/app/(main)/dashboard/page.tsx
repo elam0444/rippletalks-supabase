@@ -7,10 +7,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CSVUploadCard } from "@/components/dashboard/csv-upload-card";
 import { Building2, Plus } from "lucide-react";
 import { CompanyForm } from "@/components/dashboard/company-form";
 import { getCompanies, getIndustries } from "@/lib/actions/company";
+import { getRelationshipCategories } from "@/lib/actions/target-company";
 import { Button } from "@/components/ui/button";
 import { CompaniesTable } from "@/components/dashboard/companies-table";
 
@@ -25,10 +25,10 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Fetch companies and industries
-  const [companies, industries] = await Promise.all([
+  const [companies, industries, relationshipCategories] = await Promise.all([
     getCompanies(),
     getIndustries(),
+    getRelationshipCategories(),
   ]);
 
   return (
@@ -53,6 +53,7 @@ export default async function DashboardPage() {
             <CompanyForm
               mode='create'
               industries={industries}
+              relationshipCategories={relationshipCategories}
               trigger={
                 <Button size='sm'>
                   <Plus className='h-4 w-4 mr-2' />

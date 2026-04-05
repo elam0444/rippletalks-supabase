@@ -4,6 +4,81 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 
+// -----------------------------
+// 🧠 UTIL: Extract URL from text
+// -----------------------------
+function extractUrlFromText(text: string): string | null {
+  if (!text) return null;
+
+  const urlRegex = /(https?:\/\/[^\s]+)/i;
+  const match = text.match(urlRegex);
+
+  if (!match) return null;
+
+  try {
+    const url = new URL(match[0]);
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+// -----------------------------
+// 🌐 UTIL: Fetch + clean webpage
+// -----------------------------
+export async function scrapeCleanTextFromUrl(rawText: string): Promise<string> {
+  try {
+    const url = extractUrlFromText(rawText);
+
+    if (!url) {
+      console.warn("No valid URL found in description");
+      return "";
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; PuberryBot/1.0)",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch URL:", response.status);
+      return "";
+    }
+
+    const html = await response.text();
+
+    // Remove scripts, styles, and tags
+    let text = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, "")
+      .replace(/<[^>]+>/g, " ");
+
+    // Decode HTML entities (basic)
+    text = text
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+
+    // Normalize whitespace
+    text = text
+      .replace(/\s+/g, " ")
+      .replace(/\n+/g, " ")
+      .trim();
+
+    // Limit size to avoid token explosion
+    return text.slice(0, 8000);
+  } catch (error) {
+    console.error("Scraping error:", error);
+    return "";
+  }
+}
+
 type TargetCompany = {
   name: string;
   legal_name: string;
@@ -23,34 +98,41 @@ type TargetCompany = {
 
 // Call OpenAI to get companies with category suggestion
 export async function fetchTargetCompaniesFromOpenAI(
-  description: string,
+  description: string, // includes, name, description, industry, and url
   availableCategories: string[],
   availableIndustries: string[],
+  targetCustomerProfile?: string | null,
 ): Promise<TargetCompany[]> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-  const prompt = `You are an expert researcher and you are helping me build a high-quality prospect list for a company. Generate a JSON array of up to 20 companies with the following requirements:
+   // 🔥 NEW: scrape website if present
+  const scrapedText = await scrapeCleanTextFromUrl(description);
 
-1. Split the list between large and mid-sized companies (no household names). 
-2. The list should represent companies in different industries. 
-3. Avoid suggesting emerging startups (under $20M raised) unless explicitly asked.
-4. Do NOT include companies that operate in the same or adjacent categories as the Company. If there is any ambiguity, err on the side of exclusion.
-5. Look for their current customers when available, and include a mix of: 
-   - Likely existing customers (if relevant)
-   - High-quality expansion prospects
+  const systemPrompt = `Company:  ${description}
+- Target customer profile: ${targetCustomerProfile || "N/A"}
+- Scraped website text (if URL provided): ${scrapedText || "N/A"}
 
-Description:
-"${description}"
+DO NOT USE past memory, this is a new request. You are an expert researcher and you are helping me build a high-quality list of target companies for partnership and outreach based on the above company description and target customer profile. 
+Generate a JSON array of up to 20 companies inside this categories: ${availableCategories.join(", ")} with the following requirements:
 
+1. Include a mix of: 
+  a. Likely existing customers (if relevant)
+  b. High-quality expansion prospects 
+2. Split the list between large and mid-sized companies (no household names). 
+3. The list should represent companies in different industries. 
+4. Avoid suggesting emerging startups (under $20M raised) unless explicitly asked.
+5. Do NOT include companies that operate in the same or adjacent categories as the Company. If there is any ambiguity, err on the side of exclusion.`;
+
+  const userPrompt = `This is a new request. You are an expert researcher and you are helping me build a high-quality ${availableIndustries.join(", ")}
 Each company should include:
 - name
 - legal_name (if available)
 - website (if available)
 - description
 - industry (must use exactly this key name) from the following options: ${availableIndustries.join(", ")}
-- why
+- why (this should be a brief explanation 1 line of why this company is relevant or important to connect with based on the description)
 - a contact object with "name" (first and last name only, no title), "title" (job title separately please try to find the CEO), and "email" fields for a person who could be useful for outreach
-- a relationship_category (must use exactly this key name) from the following options: Prospect
+- a relationship_category (must use exactly this key name) from the following options: ${availableCategories.join(", ")}
 
 Output strictly as a JSON object with a "companies" array. Do NOT return the same company described in the input.
 
@@ -71,7 +153,7 @@ Example output format:
         "title": "Head of Partnerships",
         "email": "jane.smith@acmecorp.com"
       },
-      "relationship_category": "Strategic Partner"
+      "relationship_category": "Prospect"
     },
     {
       "name": "Bright Ventures",
@@ -87,7 +169,7 @@ Example output format:
         "title": "General Partner",
         "email": "tom@brightventures.io"
       },
-      "relationship_category": "Investor"
+      "relationship_category": "Partner"
     }
   ]
 }
@@ -96,8 +178,8 @@ Example output format:
   const completion = await openai.chat.completions.create({
     model: process.env.OPENAI_API_MODEL || "gpt-4.1",
     messages: [
-      { role: "system", content: prompt },
-      { role: "user", content: `Description: ${description}` },
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
     ],
     response_format: { type: "json_object" },
   });
@@ -179,7 +261,6 @@ export async function saveTargetCompanies(
     let companyId: string;
 
     if (existingCompany?.id) {
-      // Company already exists — reuse it
       companyId = existingCompany.id;
     } else {
       const industryId = c.industry
@@ -210,13 +291,13 @@ export async function saveTargetCompanies(
       companyId = companyData.id;
     }
 
-    // --- 2. Handle contact (separate model, linked via company_id) ---
+    // --- 2. Handle contact ---
     if (c.contact?.email) {
       console.log("Attempting contact save:", {
         company_id: companyId,
         email: c.contact.email,
       });
-      // Check if contact already exists by email
+
       const { data: existingContact } = await supabase
         .from("contacts")
         .select("id")
@@ -224,7 +305,6 @@ export async function saveTargetCompanies(
         .single();
 
       if (existingContact?.id) {
-        // Update existing contact with the new company_id and details
         const { error: contactUpdateError } = await supabase
           .from("contacts")
           .update({
@@ -241,7 +321,6 @@ export async function saveTargetCompanies(
           console.error("Error updating contact:", contactUpdateError);
         }
       } else {
-        // Insert new contact
         const { error: contactInsertError } = await supabase
           .from("contacts")
           .insert({
@@ -260,7 +339,7 @@ export async function saveTargetCompanies(
       }
     }
 
-    // --- 3. Handle target_companies (always attempt, even if company existed) ---
+    // --- 3. Handle target_companies ---
     if (clientCompanyId) {
       const relationshipCategoryId = c.relationship_category
         ? (categoryMap[c.relationship_category.toLowerCase()] ?? null)
@@ -322,10 +401,40 @@ export async function createTargetCompaniesFromDescription(
   clientCompanyId?: string,
 ) {
   const supabase = await createClient();
-  const { data: categories } = await supabase
+
+  // Fetch all relationship categories
+  const { data: allCategories } = await supabase
     .from("relationship_categories")
-    .select("name");
-  const categoryNames = categories?.map((c) => c.name) || [];
+    .select("id, name");
+
+  let categoryNames: string[] = [];
+  let targetCustomerProfile: string | null = null;
+
+  if (clientCompanyId) {
+    const { data: clientCompany } = await supabase
+      .from("companies")
+      .select("preferred_relationship_categories, target_customer_profile")
+      .eq("id", clientCompanyId)
+      .single();
+
+    // Resolve preferred category UUIDs to names for the prompt
+    const preferredIds: string[] =
+      clientCompany?.preferred_relationship_categories ?? [];
+
+    if (preferredIds.length > 0 && allCategories) {
+      categoryNames = allCategories
+        .filter((c) => preferredIds.includes(c.id))
+        .map((c) => c.name);
+    }
+
+    // Grab the target customer profile if set
+    targetCustomerProfile = clientCompany?.target_customer_profile ?? null;
+  }
+
+  // Fall back to all categories when no preferred ones are configured
+  if (categoryNames.length === 0 && allCategories) {
+    categoryNames = allCategories.map((c) => c.name);
+  }
 
   const { data: industries } = await supabase.from("industries").select("name");
   const industryNames = industries?.map((i) => i.name) || [];
@@ -334,6 +443,7 @@ export async function createTargetCompaniesFromDescription(
     description,
     categoryNames,
     industryNames,
+    targetCustomerProfile,
   );
 
   const saved = await saveTargetCompanies(
