@@ -107,18 +107,43 @@ export async function importPipelineFromXlsx(
 
             if (cell.value !== null && cell.value !== undefined) {
               if (typeof cell.value === "object") {
-                // Handle Formula results, Rich Text, etc.
-                if ("result" in cell.value) {
-                  value = String(cell.value.result ?? "");
-                } else if (
-                  "richText" in cell.value &&
-                  Array.isArray(cell.value.richText)
+                const val = cell.value as any; // ✅ single escape hatch
+
+                // ✅ 1. Hyperlink (BEST for emails)
+                if (typeof val.hyperlink === "string") {
+                  const link = val.hyperlink;
+
+                  value = link.startsWith("mailto:")
+                    ? link.replace("mailto:", "").trim()
+                    : link;
+                }
+
+                // ✅ 2. Nested richText inside text
+                else if (
+                  val.text?.richText &&
+                  Array.isArray(val.text.richText)
                 ) {
-                  value = cell.value.richText.map((rt) => rt.text).join("");
-                } else if (cell.value instanceof Date) {
-                  value = cell.value.toISOString();
-                } else {
-                  value = String(cell.text || "");
+                  value = val.text.richText.map((rt: any) => rt.text).join("");
+                }
+
+                // ✅ 3. Direct richText
+                else if (Array.isArray(val.richText)) {
+                  value = val.richText.map((rt: any) => rt.text).join("");
+                }
+
+                // ✅ 4. Formula result
+                else if ("result" in val) {
+                  value = String(val.result ?? "");
+                }
+
+                // ✅ 5. Date
+                else if (val instanceof Date) {
+                  value = val.toISOString();
+                }
+
+                // fallback
+                else {
+                  value = String(val);
                 }
               } else {
                 value = String(cell.value);

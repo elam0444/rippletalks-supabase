@@ -168,7 +168,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
   const { data: targetContacts } = targetCompanyIds.length
     ? await supabase
         .from("contacts")
-        .select("id, company_id, title, first_name, last_name, name, email")
+        .select("id, company_id, title, first_name, last_name, name, email, phone, linkedin_url")
         .in("company_id", targetCompanyIds)
     : { data: [] };
 
@@ -178,7 +178,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6">
         {/* Back button */}
         <div className="flex items-center gap-4">
           <Link href="/dashboard">
@@ -412,6 +412,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                   website?: string | null;
                   description?: string | null;
                 } | null;
+                const contactData = tc ? contactsMap.get(tc.id) : null;
                 return {
                   ...t,
                   target_company: tc,
@@ -419,23 +420,16 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                     id: string;
                     name: string;
                   } | null,
-                  contact: tc
-                    ? (contactsMap.get(tc.id) ?? {
-                        id: "",
-                        title: "",
-                        name: "",
-                        first_name: "",
-                        last_name: "",
-                        email: "",
-                      })
-                    : {
-                        id: "",
-                        title: "",
-                        name: "",
-                        first_name: "",
-                        last_name: "",
-                        email: "",
-                      },
+                  contact: {
+                    id: contactData?.id ?? "",
+                    title: contactData?.title ?? "",
+                    name: contactData?.name ?? "",
+                    first_name: contactData?.first_name ?? "",
+                    last_name: contactData?.last_name ?? "",
+                    email: contactData?.email ?? "",
+                    linkedin_url: contactData?.linkedin_url ?? "",
+                    phone: contactData?.phone ?? "",
+                  },
                 };
               })}
               clientCompanyId={company.id}
