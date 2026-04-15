@@ -46,6 +46,8 @@ import {
 } from "@/lib/actions/target-company";
 import ContactDatesModal from "@/components/dashboard/contact-dates-modal";
 import { CompanyLogoImage } from "@/components/dashboard/company-logo-image";
+import { ExportSheetButton } from "@/components/dashboard/export-sheet-button";
+import { ImportSheetButton } from "@/components/dashboard/import-sheet-button";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -387,11 +389,18 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 Companies that {company.name} is targeting
               </CardDescription>
             </div>
-            <AddTargetCompanyForm
-              clientCompanyId={company.id}
-              availableCompanies={availableCompanies}
-              categories={categories}
-            />
+            <div className="flex items-center gap-2" suppressHydrationWarning>
+              <AddTargetCompanyForm
+                clientCompanyId={company.id}
+                availableCompanies={availableCompanies}
+                categories={categories}
+              />
+              <ExportSheetButton
+                companyId={company.id}
+                companyName={company.name}
+              />
+              <ImportSheetButton companyId={company.id} />
+            </div>
           </CardHeader>
           <CardContent>
             <TargetCompaniesTable
@@ -483,14 +492,14 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                           className="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium"
                         >
                           <CalendarDays className="h-3 w-3 text-muted-foreground" />
-                          {date.toLocaleDateString(undefined, {
+                          {date.toLocaleDateString("en-US", {
                             weekday: "short",
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                           })}
                           <span className="text-muted-foreground">
-                            {date.toLocaleTimeString(undefined, {
+                            {date.toLocaleTimeString("en-US", {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -96,15 +96,34 @@ export function CompanyForm({
   trigger,
   onSuccess,
 }: CompanyFormProps) {
+  // ── All hooks first — no early returns before this block ──────────────────
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories, setCategories] =
-    useState<RelationshipCategory[]>(initialCategories ?? []);
+  const [categories, setCategories] = useState<RelationshipCategory[]>(
+    initialCategories ?? [],
+  );
   const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const newCategoryInputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: getDefaultValues(),
+  });
+
+  const selectedCategoryIds =
+    form.watch("preferred_relationship_categories") ?? [];
+
+  // ── Early return AFTER all hooks ──────────────────────────────────────────
+  if (!mounted) return null;
+
+  // ── Helper functions ──────────────────────────────────────────────────────
   function getDefaultValues() {
     return {
       name: initialData?.name || "",
@@ -119,19 +138,8 @@ export function CompanyForm({
     };
   }
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: getDefaultValues(),
-  });
-
-  const selectedCategoryIds =
-    form.watch("preferred_relationship_categories") ?? [];
-
-
-
   function toggleCategory(id: string) {
-    const current =
-      form.getValues("preferred_relationship_categories") ?? [];
+    const current = form.getValues("preferred_relationship_categories") ?? [];
     const updated = current.includes(id)
       ? current.filter((c) => c !== id)
       : [...current, id];
@@ -155,12 +163,11 @@ export function CompanyForm({
     const created = result.data;
     setCategories((prev) => [...prev, created]);
 
-    const current =
-      form.getValues("preferred_relationship_categories") ?? [];
+    const current = form.getValues("preferred_relationship_categories") ?? [];
     form.setValue(
       "preferred_relationship_categories",
       [...current, created.id],
-      { shouldDirty: true }
+      { shouldDirty: true },
     );
 
     setNewCategoryName("");
@@ -208,7 +215,7 @@ export function CompanyForm({
   }
 
   const selectedCategories = categories.filter((c) =>
-    selectedCategoryIds.includes(c.id)
+    selectedCategoryIds.includes(c.id),
   );
 
   return (
@@ -295,7 +302,7 @@ export function CompanyForm({
                   <FormLabel>Industry</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value || ""}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -422,7 +429,7 @@ export function CompanyForm({
                                 "h-4 w-4 shrink-0",
                                 selectedCategoryIds.includes(cat.id)
                                   ? "opacity-100"
-                                  : "opacity-0"
+                                  : "opacity-0",
                               )}
                             />
                             {cat.name}
