@@ -46,6 +46,8 @@ import {
 } from "@/lib/actions/target-company";
 import ContactDatesModal from "@/components/dashboard/contact-dates-modal";
 import { CompanyLogoImage } from "@/components/dashboard/company-logo-image";
+import { ExportSheetButton } from "@/components/dashboard/export-sheet-button";
+import { ImportSheetButton } from "@/components/dashboard/import-sheet-button";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -166,7 +168,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
   const { data: targetContacts } = targetCompanyIds.length
     ? await supabase
         .from("contacts")
-        .select("id, company_id, title, first_name, last_name, name, email")
+        .select("id, company_id, title, first_name, last_name, name, email, phone, linkedin_url")
         .in("company_id", targetCompanyIds)
     : { data: [] };
 
@@ -176,7 +178,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6">
         {/* Back button */}
         <div className="flex items-center gap-4">
           <Link href="/dashboard">
@@ -387,11 +389,18 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 Companies that {company.name} is targeting
               </CardDescription>
             </div>
-            <AddTargetCompanyForm
-              clientCompanyId={company.id}
-              availableCompanies={availableCompanies}
-              categories={categories}
-            />
+            <div className="flex items-center gap-2" suppressHydrationWarning>
+              <AddTargetCompanyForm
+                clientCompanyId={company.id}
+                availableCompanies={availableCompanies}
+                categories={categories}
+              />
+              <ExportSheetButton
+                companyId={company.id}
+                companyName={company.name}
+              />
+              <ImportSheetButton companyId={company.id} />
+            </div>
           </CardHeader>
           <CardContent>
             <TargetCompaniesTable
@@ -403,6 +412,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                   website?: string | null;
                   description?: string | null;
                 } | null;
+                const contactData = tc ? contactsMap.get(tc.id) : null;
                 return {
                   ...t,
                   target_company: tc,
@@ -410,23 +420,16 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                     id: string;
                     name: string;
                   } | null,
-                  contact: tc
-                    ? (contactsMap.get(tc.id) ?? {
-                        id: "",
-                        title: "",
-                        name: "",
-                        first_name: "",
-                        last_name: "",
-                        email: "",
-                      })
-                    : {
-                        id: "",
-                        title: "",
-                        name: "",
-                        first_name: "",
-                        last_name: "",
-                        email: "",
-                      },
+                  contact: {
+                    id: contactData?.id ?? "",
+                    title: contactData?.title ?? "",
+                    name: contactData?.name ?? "",
+                    first_name: contactData?.first_name ?? "",
+                    last_name: contactData?.last_name ?? "",
+                    email: contactData?.email ?? "",
+                    linkedin_url: contactData?.linkedin_url ?? "",
+                    phone: contactData?.phone ?? "",
+                  },
                 };
               })}
               clientCompanyId={company.id}
@@ -483,14 +486,14 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                           className="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium"
                         >
                           <CalendarDays className="h-3 w-3 text-muted-foreground" />
-                          {date.toLocaleDateString(undefined, {
+                          {date.toLocaleDateString("en-US", {
                             weekday: "short",
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                           })}
                           <span className="text-muted-foreground">
-                            {date.toLocaleTimeString(undefined, {
+                            {date.toLocaleTimeString("en-US", {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
