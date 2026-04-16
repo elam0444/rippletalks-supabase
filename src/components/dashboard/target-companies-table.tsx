@@ -60,15 +60,15 @@ function TargetCompanyLogo({
         alt={name}
         width={32}
         height={32}
-        className='h-8 w-8 rounded object-cover'
+        className="h-8 w-8 rounded object-cover"
         onError={() => setError(true)}
       />
     );
   }
 
   return (
-    <div className='flex h-8 w-8 items-center justify-center rounded bg-muted'>
-      <Building2 className='h-4 w-4 text-muted-foreground' />
+    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+      <Building2 className="h-4 w-4 text-muted-foreground" />
     </div>
   );
 }
@@ -93,6 +93,8 @@ interface TargetCompany {
     first_name: string;
     last_name: string;
     email: string;
+    linkedin_url: string | null;
+    phone: string | null;
   };
   relationship_category: string;
   category: { id: string; name: string } | null;
@@ -204,7 +206,7 @@ export function TargetCompaniesTable({
 
   return (
     <>
-      <div className='relative'>
+      <div className="relative">
         {/* Floating batch-action toolbar */}
         <div
           className={[
@@ -214,50 +216,51 @@ export function TargetCompaniesTable({
               : "translate-y-2 opacity-0 pointer-events-none",
           ].join(" ")}
         >
-          <div className='flex items-center gap-1 rounded-full border bg-background px-2 py-1.5 shadow-lg'>
-            <span className='pl-2 pr-3 text-sm font-medium tabular-nums'>
+          <div className="flex items-center gap-1 rounded-full border bg-background px-2 py-1.5 shadow-lg">
+            <span className="pl-2 pr-3 text-sm font-medium tabular-nums">
               {selectedIds.size} selected
             </span>
-            <div className='h-4 w-px bg-border' />
+            <div className="h-4 w-px bg-border" />
             <Button
-              variant='ghost'
-              size='sm'
-              className='rounded-full px-3 text-muted-foreground hover:text-foreground'
+              variant="ghost"
+              size="sm"
+              className="rounded-full px-3 text-muted-foreground hover:text-foreground"
               onClick={() => setSelectedIds(new Set())}
             >
               Clear
             </Button>
             <Button
-              variant='destructive'
-              size='sm'
-              className='rounded-full px-3'
+              variant="destructive"
+              size="sm"
+              className="rounded-full px-3"
               onClick={() => setBatchDeleteOpen(true)}
             >
-              <Trash2 className='mr-1.5 h-3.5 w-3.5' />
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               Delete
             </Button>
           </div>
         </div>
 
         {targetCompanies.length > 0 ? (
-          <Table>
+          <Table className="table-fixed w-full">
             <TableHeader>
-              <TableRow className='bg-muted/50'>
-                <TableHead className='w-10'>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-10">
                   <Checkbox
                     checked={allSelected}
                     onCheckedChange={toggleAll}
-                    aria-label='Select all'
+                    aria-label="Select all"
                   />
                 </TableHead>
-                <TableHead className='w-[150px]'>Target Company</TableHead>
-                <TableHead className='w-[130px]'>Category</TableHead>
-                <TableHead className='w-[130px]'>Title</TableHead>
-                <TableHead className='w-[130px]'>Contact</TableHead>
-                <TableHead className='w-[70px]'>Why</TableHead>
-                <TableHead className='w-[100px]'>Interested</TableHead>
-                <TableHead className='w-[120px]'>Last Activity</TableHead>
-                <TableHead className='w-[20]'></TableHead>
+                <TableHead className="w-[120px]">Target Company</TableHead>
+                <TableHead className="w-[130px]">Category</TableHead>
+                <TableHead className="w-[70px]">Title</TableHead>
+                <TableHead className="w-[100px]">Contact</TableHead>
+                <TableHead className="w-[70px]">LinkedIn</TableHead>
+                <TableHead className="w-[70px]">Why</TableHead>
+                <TableHead className="w-[100px]">Interested</TableHead>
+                <TableHead className="w-[120px]">Last Activity</TableHead>
+                <TableHead className="w-[20]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -270,7 +273,7 @@ export function TargetCompaniesTable({
                   <TableRow
                     key={target.id}
                     data-selected={selectedIds.has(target.id) || undefined}
-                    className='data-selected:bg-muted/30'
+                    className="data-selected:bg-muted/30"
                   >
                     <TableCell>
                       <Checkbox
@@ -280,38 +283,52 @@ export function TargetCompaniesTable({
                       />
                     </TableCell>
                     <TableCell>
-                      <div className='flex items-center gap-3'>
+                      <div className="flex items-center gap-3">
                         <TargetCompanyLogo
                           name={targetCompany?.name || "Unknown"}
                           logoUrl={targetCompany?.logo_url}
                           website={targetCompany?.website}
                         />
-                        <span className='font-medium'>
+                        <span className="font-medium">
                           {targetCompany?.name || "Unknown"}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className='inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium'>
+                      <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
                         {category?.name || "—"}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <p className='truncate text-sm text-muted-foreground'>
+                      <p className="truncate text-sm text-muted-foreground">
                         {contact?.title || " - "}
                       </p>
                     </TableCell>
                     <TableCell>
-                      <p className='truncate text-sm text-muted-foreground'>
+                      <p className="truncate text-sm text-muted-foreground">
                         {contact?.name ||
                           `${contact?.first_name} ${contact?.last_name}`}{" "}
                         ({contact.email})
                       </p>
                     </TableCell>
+                    <TableCell className="w-[90px]">
+                      {contact?.linkedin_url ? (
+                        <a
+                          href={contact.linkedin_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block truncate text-sm text-blue-600 hover:underline"
+                        >
+                          {contact.linkedin_url}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Button
-                        variant='outline'
-                        size='sm'
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleWhyClick(target)}
                       >
                         Why
@@ -319,18 +336,18 @@ export function TargetCompaniesTable({
                     </TableCell>
                     <TableCell>
                       {target.selected ? (
-                        <span className='inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700'>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
                           ✓ Selected
                         </span>
                       ) : (
-                        <span className='inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground'>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                           Passed
                         </span>
                       )}
                     </TableCell>
                     <TableCell>
                       <span
-                        className='text-xs text-muted-foreground'
+                        className="text-xs text-muted-foreground"
                         title={new Date(target.updated_at).toLocaleString()}
                       >
                         {new Date(target.updated_at).toLocaleDateString(
@@ -347,25 +364,25 @@ export function TargetCompaniesTable({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-8 w-8'
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                           >
-                            <MoreHorizontal className='h-4 w-4' />
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align='end'>
+                        <DropdownMenuContent align="end">
                           <DropdownMenuItem
                             onSelect={() => setEditingId(target.id)}
                           >
-                            <Pencil className='mr-2 h-4 w-4' />
+                            <Pencil className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onSelect={() => setDeletingId(target.id)}
-                            className='text-destructive focus:text-destructive'
+                            className="text-destructive focus:text-destructive"
                           >
-                            <Trash2 className='mr-2 h-4 w-4' />
+                            <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -397,7 +414,7 @@ export function TargetCompaniesTable({
             </TableBody>
           </Table>
         ) : (
-          <div className='py-8 text-center text-muted-foreground'>
+          <div className="py-8 text-center text-muted-foreground">
             No target companies found for {clientCompanyName}.
           </div>
         )}
@@ -427,10 +444,10 @@ export function TargetCompaniesTable({
             <AlertDialogAction
               onClick={handleBatchDelete}
               disabled={isBatchDeleting}
-              className='bg-destructive text-white hover:bg-destructive/90'
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               {isBatchDeleting && (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Remove
             </AlertDialogAction>
